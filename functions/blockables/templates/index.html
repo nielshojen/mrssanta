@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<head>
+  <title>Mrs Santa</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <style>
+    .btn-secondary,
+    .btn-secondary:hover,
+    .btn-secondary:focus {
+      color: #333;
+    }
+
+    .cover-container {
+      max-width: 42em;
+    }
+
+    .nav-masthead .nav-link {
+      padding: .25rem 0;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .5);
+      background-color: transparent;
+      border-bottom: .25rem solid transparent;
+    }
+
+    .nav-masthead .nav-link:hover,
+    .nav-masthead .nav-link:focus {
+      border-bottom-color: rgba(255, 255, 255, .25);
+    }
+
+    .nav-masthead .nav-link + .nav-link {
+      margin-left: 1rem;
+    }
+
+    .nav-masthead .active {
+      color: #fff;
+      border-bottom-color: #fff;
+    }
+
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+ </head>
+<body class="d-flex h-100 text-white bg-dark">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+  <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <header class="mb-2">
+      <div>
+        <h3 class="float-md-start mb-0">Application Rules</h3>
+        <nav class="nav nav-masthead justify-content-center float-md-end">
+          <a class="nav-link active" aria-current="page" href="#">Details</a>
+          <a class="nav-link" href="#">Call ServiceDesk</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="row">
+
+      {% if response.scope == 'global' %}
+      {% if response.policy == 'BLOCKLIST' %}
+      <div class="col-lg-12">
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Rule</h6>
+            </div>
+            <div class="card-body">
+              {% if response.custom_msg %}
+              <p class="card-text">{{ response.custom_msg }}</p>
+              {% else %}
+              <p class="card-text">{{ response.file_name }} is blocked by BESTSELLER and is not allowed to run</p>
+              {% endif %}
+            </div>
+        </div>
+
+      </div>
+      {% endif %}
+      {% endif %}
+
+    </div>
+
+    <div class="row">
+
+      <div class="col-lg-12">
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Device Information</h6>
+            </div>
+            <div class="card-body">
+              <p class="card-text">Hostname: {{ response.hostname }}</p>
+              <p class="card-text">User: {{ response.primary_user }}</p>
+            </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="row">
+
+      <div class="col-lg-12">
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Blocked Binary Information</h6>
+            </div>
+            <div class="card-body">
+              <p class="card-text">File Bundle Name: {{ response.file_bundle_name }}</p>
+              <p class="card-text">Version: {{ response.file_bundle_version }}</p>
+              <p class="card-text">Bundle ID: {{ response.file_bundle_id }}</p>
+              <p class="card-text">File Name: {{ response.file_name }}</p>
+              <p class="card-text">File Path: {{ response.file_path }}</p>
+              <p class="card-text">Signed By: {{ response.signed_by }}</p>
+              <p class="card-text">FIle Bundle Version: {{ response.file_bundle_version_string }}</p>
+            </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="row">
+
+      <div class="col-lg-12">
+
+        <div class="accordion" id="accordionExample">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                More Device Details
+              </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+              <div class="accordion-body">
+                <p>Client Mode: {{ response.client_mode }}</p>
+                <p>OS Version: {{ response.os_version }}</p>
+                <p>OS Build: {{ response.os_build }}</p>
+                <p>Serial Number: {{ response.serial_num }}</p>
+                <p>model_identifier: {{ response.model_identifier }}</p>
+                <p>cdhash_rule_count: {{ response.cdhash_rule_count }}</p>
+                <p>signingid_rule_count: {{ response.signingid_rule_count }}</p>
+                <p>binary_rule_count: {{ response.binary_rule_count }}</p>
+                <p>teamid_rule_count: {{ response.teamid_rule_count }}</p>
+                <p>compiler_rule_count: {{ response.compiler_rule_count }}</p>
+                <p>certificate_rule_count: {{ response.certificate_rule_count }}</p>
+                <p>transitive_rule_count: {{ response.transitive_rule_count }}</p>
+                <p>request_clean_sync: {{ response.request_clean_sync }}</p>
+                <p>santa_version: {{ response.santa_version }}</p>
+                <p>machine_id: {{ response.machine_id }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                More Binary Details
+              </button>
+            </h2>
+            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+              <div class="accordion-body">
+                <p>Signing ID: {{ response.signing_id }}</p>
+                <p>Team ID: {{ response.team_id }}</p>
+                <p>File Hash: {{ response.file_sha256 }}</p>
+                <p>Bundle Hash: {{ response.file_bundle_hash }}</p>
+                <p>file_bundle_executable_rel_path: {{ response.file_bundle_executable_rel_path }}</p>
+                <p>signing_chain:</p>
+                {% for i in response.signing_chain %}
+                <p>{{ i.cn }}</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+</body>
