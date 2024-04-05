@@ -17,19 +17,29 @@ variable "domain" {
   type        = string
 }
 
-variable "labels" {
-  type = map(string)
-  description = "The labels to apply to the resources"
-}
-
 variable "service" {
   type        = string
   default     = "mrssanta"
   description = "The name of the service"
 }
 
+variable "environment" {
+  type        = string
+  description = "Release Environment (eg. dev or prod)"
+}
+
+variable "owner" {
+  type        = string
+  description = "The application owner"
+}
+
+variable "team" {
+  type        = string
+  description = "The application owner team"
+}
+
 variable "service_version" {
   type        = string
   description = "Service version"
-  default = "0.0.1"
+  default = "0.1"
 }

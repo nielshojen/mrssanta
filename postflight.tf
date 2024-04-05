@@ -1,13 +1,13 @@
 data "archive_file" "postflight" {
   type        = "zip"
-  output_path = "${path.module}/functions/postflight.zip"
-  source_dir  = "${path.module}/functions/postflight"
+  output_path = "${path.module}/gcp/functions/postflight.zip"
+  source_dir  = "${path.module}/gcp/functions/postflight"
 }
 
 resource "google_storage_bucket_object" "postflight" {
   name   = "postflight.zip"
   bucket = google_storage_bucket.source.name
-  source = "${path.module}/functions/postflight.zip"
+  source = "${path.module}/gcp/functions/postflight.zip"
 }
 
 resource "google_cloudfunctions2_function" "postflight" {
@@ -16,7 +16,7 @@ resource "google_cloudfunctions2_function" "postflight" {
   description = var.service
 
   build_config {
-    runtime = "python312"
+    runtime = "go121"
     entry_point = "postflight"
     source {
       storage_source {
@@ -38,10 +38,14 @@ resource "google_cloudfunctions2_function" "postflight" {
     service_account_email = google_service_account.account.email
   }
   
-  labels = "${merge(var.labels, {
-    env = "prod"
+  labels = {
+    env = "${var.environment}"
     app = "${var.service}"
-  })}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+    version = replace(var.service_version, ".", "-"),
+  }
 
   depends_on = [ google_storage_bucket_object.postflight ]
 }

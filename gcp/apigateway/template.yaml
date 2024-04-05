@@ -1,0 +1,441 @@
+swagger: '2.0'
+info:
+  title: Mrs Santa Preflight API Gateway
+  description: A Santa Sync Server
+  version: 0.0.1
+schemes:
+  - https
+consumes:
+  - application/json 
+produces:
+  - application/json
+paths:
+  /santa/preflight/{machine_id}:
+    post:
+      summary: "Handle preflight requests"
+      operationId: preflight
+      x-google-backend:
+        address: ${ PREFLIGHT_URL }
+      parameters:
+        - name: machine_id
+          in: path
+          required: true
+          type: string
+          description: "ID of the device"
+        - name: body
+          in: body
+          description: 'JSON blob containing preflight request data'
+          required: true
+          schema:
+            $ref: '#/definitions/PreflightRequest'
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: "#/definitions/PreflightResponse"
+  /santa/eventupload/{machine_id}:
+    post:
+      summary: "Handle eventupload requests"
+      operationId: eventupload
+      x-google-backend:
+        address: ${ EVENTUPLOAD_URL }
+      parameters:
+        - name: machine_id
+          in: path
+          required: true
+          type: string
+          description: "ID of the device"
+        - name: body
+          in: body
+          description: 'JSON blob containing preflight request data'
+          required: true
+          schema:
+            $ref: '#/definitions/EventuploadRequest'
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: "#/definitions/EventuploadResponse"
+  /santa/ruledownload/{machine_id}:
+    post:
+      summary: "Handle ruledownload requests"
+      operationId: ruledownload
+      x-google-backend:
+        address: ${ RULEDOWNLOAD_URL }
+      parameters:
+        - name: machine_id
+          in: path
+          required: true
+          type: string
+          description: "ID of the device"
+        - name: body
+          in: body
+          description: 'JSON blob containing preflight request data'
+          required: true
+          schema:
+            $ref: '#/definitions/RuledownloadRequest'
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: "#/definitions/RuledownloadResponse"
+  /santa/postflight/{machine_id}:
+    post:
+      summary: "Handle postflight requests"
+      operationId: postflight
+      x-google-backend:
+        address: ${ POSTFLIGHT_URL }
+      parameters:
+        - name: machine_id
+          in: path
+          required: true
+          type: string
+          description: "ID of the device"
+        - name: body
+          in: body
+          description: 'JSON blob containing postflight request data'
+          required: true
+          schema:
+            $ref: '#/definitions/AnyValue'
+      responses:
+        200:
+          description: "Successful response"
+  /santa/xsrf/{machine_id}:
+    post:
+      summary: "Handle xsrf requests"
+      operationId: xsrf
+      x-google-backend:
+        address: ${ XSRF_URL }
+      parameters:
+        - name: machine_id
+          in: path
+          required: true
+          type: string
+          description: "ID of the device"
+        - name: body
+          in: body
+          description: 'JSON blob containing postflight request data'
+          required: true
+          schema:
+            $ref: '#/definitions/AnyValue'
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+  /santa/blockables/{machine_id}/{file_identifier}:
+    get:
+      summary: "Handle blockables requests"
+      operationId: blockables
+      x-google-backend:
+        address: ${ BLOCKABLES_URL }
+      parameters:
+        - name: machine_id
+          in: path
+          required: true
+          type: string
+          description: "ID of the device"
+        - name: file_identifier
+          in: path
+          required: true
+          type: string
+          description: "SHA-256 of the file that was blocked"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+  /api:
+    get:
+      summary: "Handle api requests"
+      operationId: apir
+      x-google-backend:
+        address: ${ API_URL }
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+  /api/rules:
+    get:
+      summary: "Handle api requests"
+      operationId: apirules
+      x-google-backend:
+        address: ${ API_URL }/rules
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+  /api/rules/{id}:
+    get:
+      summary: "Handle api requests"
+      operationId: apirule
+      x-google-backend:
+        address: ${ API_URL }/rules/{id}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+          description: "ID of the rule"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+definitions:
+  AnyValue: {}
+  PreflightRequest:
+    type: object
+    required:
+      - serial_num
+      - hostname
+      - os_version
+      - os_build
+      - santa_version
+      - primary_user
+      - client_mode
+    properties:
+      serial_num:
+        type: string
+        description: 'The serial_num of the preflight request'
+      hostname:
+        type: string
+        description: 'The hostname of the preflight request'
+      os_version:
+        type: string
+        description: 'The os_version of the preflight request'
+      os_build:
+        type: string
+        description: 'The os_build of the preflight request'
+      model_identifier:
+        type: string
+        description: 'The model_identifier of the preflight request'
+      santa_version:
+        type: string
+        description: 'The santa_version of the preflight request'
+      primary_user:
+        type: string
+        description: 'The primary_user of the preflight request'
+      binary_rule_count:
+        type: integer
+        description: 'The binary_rule_count of the preflight data'
+      certificate_rule_count:
+        type: integer
+        description: 'The certificate_rule_count of the preflight data'
+      compiler_rule_count:
+        type: integer
+        description: 'The compiler_rule_count of the preflight data'
+      transitive_rule_count:
+        type: integer
+        description: 'The transitive_rule_count of the preflight data'
+      teamid_rule_count:
+        type: integer
+        description: 'The teamid_rule_count of the preflight data'
+      signingid_rule_count:
+        type: integer
+        description: 'The signingid_rule_count of the preflight data'
+      cdhash_rule_count:
+        type: integer
+        description: 'The cdhash_rule_count of the preflight data'
+      client_mode:
+        type: string
+        description: 'The primary_user of the preflight request'
+      request_clean_sync:
+        type: boolean
+        description: 'The request_clean_sync of the preflight request'
+  PreflightResponse:
+    type: "object"
+    required:
+      - batch_size
+      - full_sync_interval
+      - client_mode
+    properties:
+      client_mode:
+        type: "integer"
+        description: "Client mode"
+      blocked_path_regex:
+        type: "string"
+        description: "Blocked path regex"
+      allowed_path_regex:
+        type: "string"
+        description: "Allowed path regex"
+      batch_size:
+        type: "integer"
+        description: "Batch size"
+      enable_bundles:
+        type: "boolean"
+        description: "Enable bundles"
+      enable_transitive_rules:
+        type: "boolean"
+        description: "Enable transitive rules"
+      clean_sync:
+        type: "boolean"
+        description: "Clean sync"
+      full_sync_interval:
+        type: "integer"
+        description: "Full sync interval"
+      upload_logs_url:
+        type: "string"
+        description: "Upload logs URL"
+  EventuploadRequest:
+    type: "object"
+    required:
+        - event
+    properties:
+        event:
+            type: array
+            items:
+                type: object
+                required:
+                - file_sha256
+                - file_path
+                - file_name
+                - decision
+                properties:
+                    file_sha256:
+                        type: string
+                    file_path:
+                        type: string
+                    file_name:
+                        type: string
+                    executing_user:
+                        type: string
+                    execution_time:
+                        type: number
+                    logged_in_users:
+                        type: array
+                        items: {}
+                    current_sessions:
+                        type: array
+                        items: {}
+                    decision:
+                        type: string
+                    file_bundle_id:
+                        type: string
+                    file_bundle_path:
+                        type: string
+                    file_bundle_executable_rel_path:
+                        type: string
+                    file_bundle_name:
+                        type: string
+                    file_bundle_version:
+                        type: string
+                    file_bundle_version_string:
+                        type: string
+                    file_bundle_hash:
+                        type: string
+                    file_bundle_hash_millis:
+                        type: number
+                    file_bundle_binary_count:
+                        type: integer
+                    pid:
+                        type: integer
+                    ppid:
+                        type: integer
+                    parent_name:
+                        type: string
+                    quarantine_data_url:
+                        type: string
+                    quarantine_referer_url:
+                        type: string
+                    quarantine_timestamp:
+                        type: number
+                    quarantine_agent_bundle_id:
+                        type: string
+                    signing_chain:
+                        type: array
+                        items:
+                            type: object
+                            required:
+                            - cn
+                            - valid_until
+                            - org
+                            - valid_from
+                            - ou
+                            - sha256
+                            properties:
+                              cn:
+                                type: string
+                              valid_until:
+                                type: integer
+                              org:
+                                type: string
+                              valid_from:
+                                type: integer
+                              ou:
+                                type: string
+                              sha256:
+                                type: string
+                    signing_id:
+                        type: string
+                    team_id:
+                        type: string
+                    cdhash:
+                        type: string
+
+  EventuploadResponse:
+    type: "object"
+    properties:
+      event_upload_bundle_binaries:
+        type: array
+        items: {}
+        description: "An array of bundle hashes that was uploaded"
+  RuledownloadRequest:
+    type: "object"
+    properties:
+      cursor:
+        type: "string"
+        description: "Used to continue a rule download in a future request"
+  RuledownloadResponse:
+    type: "object"
+    required:
+    - rules
+    properties:
+      cursor:
+        type: "string"
+        description: "Used to continue a rule download in a future request"
+      rules:
+        type: "array"
+        description: "List of rule objects"
+        items:
+          type: object
+          required:
+          - identifier
+          - policy
+          - rule_type
+          properties:
+              identifier:
+                  type: string
+              policy:
+                  type: string
+              rule_type:
+                  type: string
+              custom_msg:
+                  type: string
+              custom_url:
+                  type: string
+              creation_time:
+                  type: number
+              file_bundle_binary_count:
+                  type: integer
+              file_bundle_hash:
+                  type: string
+  PostlightRequest:
+    type: "object"
+    required:
+      - rules_received
+      - rules_processed
+    properties:
+      rules_received:
+        type: "integer"
+        description: "The number of rules the client received"
+      rules_processed:
+        type: "string"
+        description: "The number of rules that were processed"
+securityDefinitions:
+  apiKey:
+    type: apiKey
+    in: header
+    name: X-API-KEY

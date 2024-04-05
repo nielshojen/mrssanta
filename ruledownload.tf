@@ -1,13 +1,13 @@
 data "archive_file" "ruledownload" {
   type        = "zip"
-  output_path = "${path.module}/functions/ruledownload.zip"
-  source_dir  = "${path.module}/functions/ruledownload"
+  output_path = "${path.module}/gcp/functions/ruledownload.zip"
+  source_dir  = "${path.module}/gcp/functions/ruledownload"
 }
 
 resource "google_storage_bucket_object" "ruledownload" {
   name   = "ruledownload.zip"
   bucket = google_storage_bucket.source.name
-  source = "${path.module}/functions/ruledownload.zip"
+  source = "${path.module}/gcp/functions/ruledownload.zip"
 }
 
 resource "google_cloudfunctions2_function" "ruledownload" {
@@ -16,7 +16,7 @@ resource "google_cloudfunctions2_function" "ruledownload" {
   description = var.service
 
   build_config {
-    runtime = "python312"
+    runtime = "go121"
     entry_point = "ruledownload"
     source {
       storage_source {
@@ -38,10 +38,14 @@ resource "google_cloudfunctions2_function" "ruledownload" {
     service_account_email = google_service_account.account.email
   }
   
-  labels = "${merge(var.labels, {
-    env = "prod"
+  labels = {
+    env = "${var.environment}"
     app = "${var.service}"
-  })}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+    version = replace(var.service_version, ".", "-"),
+  }
 
   depends_on = [ google_storage_bucket_object.ruledownload ]
 }

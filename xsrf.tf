@@ -1,13 +1,13 @@
 data "archive_file" "xsrf" {
   type        = "zip"
-  output_path = "${path.module}/functions/xsrf.zip"
-  source_dir  = "${path.module}/functions/xsrf"
+  output_path = "${path.module}/gcp/functions/xsrf.zip"
+  source_dir  = "${path.module}/gcp/functions/xsrf"
 }
 
 resource "google_storage_bucket_object" "xsrf" {
   name   = "xsrf.zip"
   bucket = google_storage_bucket.source.name
-  source = "${path.module}/functions/xsrf.zip"
+  source = "${path.module}/gcp/functions/xsrf.zip"
 }
 
 resource "google_cloudfunctions2_function" "xsrf" {
@@ -16,7 +16,7 @@ resource "google_cloudfunctions2_function" "xsrf" {
   description = var.service
 
   build_config {
-    runtime = "python312"
+    runtime = "go121"
     entry_point = "xsrf"
     source {
       storage_source {
@@ -38,10 +38,14 @@ resource "google_cloudfunctions2_function" "xsrf" {
     service_account_email = google_service_account.account.email
   }
   
-  labels = "${merge(var.labels, {
-    env = "prod"
+  labels = {
+    env = "${var.environment}"
     app = "${var.service}"
-  })}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+    version = replace(var.service_version, ".", "-"),
+  }
 
   depends_on = [ google_storage_bucket_object.xsrf ]
 }

@@ -5,3 +5,4 @@ mysql/
 *.tfstate*
 .terraform*
 *.auto.tfvars
+*.json

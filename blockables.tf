@@ -1,13 +1,13 @@
 data "archive_file" "blockables" {
   type        = "zip"
-  output_path = "${path.module}/functions/blockables.zip"
-  source_dir  = "${path.module}/functions/blockables"
+  output_path = "${path.module}/gcp/functions/blockables.zip"
+  source_dir  = "${path.module}/gcp/functions/blockables"
 }
 
 resource "google_storage_bucket_object" "blockables" {
   name   = "blockables.zip"
   bucket = google_storage_bucket.source.name
-  source = "${path.module}/functions/blockables.zip"
+  source = "${path.module}/gcp/functions/blockables.zip"
 }
 
 resource "google_cloudfunctions2_function" "blockables" {
@@ -38,10 +38,14 @@ resource "google_cloudfunctions2_function" "blockables" {
     service_account_email = google_service_account.account.email
   }
   
-  labels = "${merge(var.labels, {
-    env = "prod"
+  labels = {
+    env = "${var.environment}"
     app = "${var.service}"
-  })}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+    version = replace(var.service_version, ".", "-"),
+  }
 
   depends_on = [ google_storage_bucket_object.blockables ]
 }

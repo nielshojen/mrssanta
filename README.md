@@ -1,6 +1,6 @@
 # Mrs Santa
 
-Santa sync sever inspired by projects like Rudolph and Moroz
+Santa sync server inspired by projects like Rudolph and Moroz
 
 ### Goals
 
@@ -12,7 +12,7 @@ Santa sync sever inspired by projects like Rudolph and Moroz
 
 ### What is it
 
-It's a connection of python scripts running in Google Cloud Funtions behind an API Gateway. Data is persisted in a Firebase DB. If a custom domain is preferable, s load balancer is spun up as well.
+It's a collection of golang and python scripts running in Google Cloud Funtions behind an API Gateway. Data is persisted in a Firebase DB. If a custom domain is preferable, s load balancer is spun up as well.
 
 Theoretically is should scale like crazy without breaking a sweat, but our Mac fleet is fairly small so i couldn't speak to the validity of that. Scaling does happen automatically and that part is completely hands off.
 
@@ -23,6 +23,8 @@ Deployment shouldn't take more than 15-20 mins.
 ### Current status
 
 We have a very basic rule syncing in place. Still need to do management API, more complex rule assignment and Web UI.
+
+Will be looking into makeing ot work on Azure as well at some point
 
 ### What's with the stupid name
 

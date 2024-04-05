@@ -5,10 +5,14 @@ resource "google_dns_managed_zone" "external" {
     state = "on"
   }
   
-  labels = "${merge(var.labels, {
-    env = "prod"
+  labels = {
+    env = "${var.environment}"
     app = "${var.service}"
-  })}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+    version = replace(var.service_version, ".", "-"),
+  }
 }
 
 resource "google_dns_record_set" "external" {
