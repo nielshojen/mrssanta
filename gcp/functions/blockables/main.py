@@ -50,6 +50,7 @@ def get_rule(identifier):
 @functions_framework.http
 def blockables(request):
     request_args = request.args
+
     
     response = {}
 
@@ -63,16 +64,19 @@ def blockables(request):
         file_identifier = request_args.getlist('file_identifier')[0]
         binary = get_binary(file_identifier)
         if binary:
-            signing_chain = binary['signing_chain']
-            binary['signed_by'] = signing_chain[0]['org']
-            response.update(binary)
-            if 'signing_id' in binary:
-                rule = get_rule(binary['signing_id'])
+            if 'SigningChain' in binary:
+                signing_chain = binary['SigningChain']
+                binary['signed_by'] = signing_chain[0]['Org']
+                response.update(binary)
+            if 'SigningID' in binary:
+                rule = get_rule(binary['SigningID'])
                 if rule:
                     response['scope'] = rule['scope']
                     response['policy'] = rule['policy']
                     response['custom_msg'] = rule['custom_msg']
         else:
             response['file_sha256'] = file_identifier
+        
+        print(response)
 
     return render_template('index.html', response=response)

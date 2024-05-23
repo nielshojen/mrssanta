@@ -78,7 +78,7 @@
               {% if response.custom_msg %}
               <p class="card-text">{{ response.custom_msg }}</p>
               {% else %}
-              <p class="card-text">{{ response.file_name }} is blocked by BESTSELLER and is not allowed to run</p>
+              <p class="card-text">{{ response.FileName }} is blocked by BESTSELLER and is not allowed to run</p>
               {% endif %}
             </div>
         </div>
@@ -116,13 +116,13 @@
                 <h6 class="m-0 font-weight-bold">Blocked Binary Information</h6>
             </div>
             <div class="card-body">
-              <p class="card-text">File Bundle Name: {{ response.file_bundle_name }}</p>
-              <p class="card-text">Version: {{ response.file_bundle_version }}</p>
-              <p class="card-text">Bundle ID: {{ response.file_bundle_id }}</p>
-              <p class="card-text">File Name: {{ response.file_name }}</p>
-              <p class="card-text">File Path: {{ response.file_path }}</p>
+              <p class="card-text">File Bundle Name: {{ response.FileBundleName }}</p>
+              <p class="card-text">Version: {{ response.FileBundleVersion }}</p>
+              <p class="card-text">Bundle ID: {{ response.FileBundleID }}</p>
+              <p class="card-text">File Name: {{ response.FileName }}</p>
+              <p class="card-text">File Path: {{ response.FilePath }}</p>
               <p class="card-text">Signed By: {{ response.signed_by }}</p>
-              <p class="card-text">FIle Bundle Version: {{ response.file_bundle_version_string }}</p>
+              <p class="card-text">File Bundle Version: {{ response.FileBundleVersionString }}</p>
             </div>
         </div>
 
@@ -169,14 +169,14 @@
             </h2>
             <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
               <div class="accordion-body">
-                <p>Signing ID: {{ response.signing_id }}</p>
-                <p>Team ID: {{ response.team_id }}</p>
-                <p>File Hash: {{ response.file_sha256 }}</p>
-                <p>Bundle Hash: {{ response.file_bundle_hash }}</p>
-                <p>file_bundle_executable_rel_path: {{ response.file_bundle_executable_rel_path }}</p>
-                <p>signing_chain:</p>
-                {% for i in response.signing_chain %}
-                <p>{{ i.cn }}</p>
+                <p>Signing ID: {{ response.SigningID }}</p>
+                <p>Team ID: {{ response.TeamID }}</p>
+                <p>File Hash: {{ response.FileSha256 }}</p>
+                <p>Bundle Hash: {{ response.FileBundleHash }}</p>
+                <p>FileBundleExecutableRelPath: {{ response.FileBundleExecutableRelPath }}</p>
+                <p>Signing Chain:</p>
+                {% for i in response.SigningChain %}
+                <p>{{ i.CN }}</p>
                 {% endfor %}
               </div>
             </div>
