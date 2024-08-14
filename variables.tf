@@ -43,3 +43,8 @@ variable "service_version" {
   description = "Service version"
   default = "0.1"
 }
+
+variable "labels" {
+  type = map(string)
+  description = "The labels to apply to the resources"
+}

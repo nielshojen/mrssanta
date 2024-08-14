@@ -31,6 +31,7 @@ resource "google_cloudfunctions2_function" "xsrf" {
     available_memory    = "256M"
     timeout_seconds     = 60
     environment_variables = {
+      LOG_EXECUTION_ID = "true"
       GCP_PROJECT = var.project_id
       DB_PREFIX = var.service
     }
@@ -38,14 +39,14 @@ resource "google_cloudfunctions2_function" "xsrf" {
     service_account_email = google_service_account.account.email
   }
   
-  labels = {
+  labels = "${merge(var.labels, {
     env = "${var.environment}"
     app = "${var.service}"
     service = "${var.environment}"
     owner = "${var.owner}"
     team = "${var.team}"
     version = replace(var.service_version, ".", "-"),
-  }
+  })}"
 
   depends_on = [ google_storage_bucket_object.xsrf ]
 }

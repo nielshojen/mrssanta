@@ -3,6 +3,21 @@ resource "google_cloud_run_service" "api" {
   location                   = var.region
   autogenerate_revision_name = true
 
+  metadata {
+    labels = {
+      env = "${var.environment}"
+      app = "${var.service}"
+      service = "${var.environment}"
+      owner = "${var.owner}"
+      team = "${var.team}"
+      version = replace(var.service_version, ".", "-"),
+    }
+    annotations = {
+      "run.googleapis.com/ingress"        = "internal-and-cloud-load-balancing"
+      "run.googleapis.com/ingress-status" = "internal-and-cloud-load-balancing"
+    }
+  }
+
   template {
     spec {
       service_account_name = google_service_account.account.email

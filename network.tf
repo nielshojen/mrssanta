@@ -11,5 +11,15 @@ resource "google_compute_region_network_endpoint_group" "backend" {
 }
 
 resource "google_compute_global_address" "external" {
+  provider = google-beta
+
   name = "${var.service}-address"
+
+  labels = "${merge(var.labels, {
+    env = "${var.environment}"
+    app = "${var.service}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+  })}"
 }

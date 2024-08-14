@@ -25,14 +25,13 @@ resource "google_api_gateway_api" "api_gw" {
   project      = var.project_id
   display_name = "${var.service}-api"
 
-  labels = {
+  labels = "${merge(var.labels, {
     env = "${var.environment}"
     app = "${var.service}"
     service = "${var.environment}"
     owner = "${var.owner}"
     team = "${var.team}"
-    version = replace(var.service_version, ".", "-"),
-  }
+  })}"
 }
 
 resource "google_api_gateway_api_config" "api_cfg" {
@@ -58,14 +57,13 @@ resource "google_api_gateway_api_config" "api_cfg" {
 
   depends_on = [local_file.api_gateway_config]
   
-  labels = {
+  labels = "${merge(var.labels, {
     env = "${var.environment}"
     app = "${var.service}"
     service = "${var.environment}"
     owner = "${var.owner}"
     team = "${var.team}"
-    version = replace(var.service_version, ".", "-"),
-  }
+  })}"
 }
 
 resource "google_api_gateway_gateway" "gw" {
@@ -78,14 +76,13 @@ resource "google_api_gateway_gateway" "gw" {
   gateway_id   = "${var.service}-api"
   display_name = "${var.service}-api"
   
-  labels = {
+  labels = "${merge(var.labels, {
     env = "${var.environment}"
     app = "${var.service}"
     service = "${var.environment}"
     owner = "${var.owner}"
     team = "${var.team}"
-    version = replace(var.service_version, ".", "-"),
-  }
+  })}"
 
   depends_on   = [google_api_gateway_api_config.api_cfg]
 }
