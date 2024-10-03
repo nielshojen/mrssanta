@@ -30,6 +30,11 @@ resource "google_cloud_run_service" "api" {
         }
 
         env {
+          name = "FIRESTORE_DATABASE"
+          value = google_firestore_database.database.name
+        }
+
+        env {
           name = "DB_PREFIX"
           value = var.service
         }

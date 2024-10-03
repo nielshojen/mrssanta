@@ -9,8 +9,6 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-var client *firestore.Client
-
 func saveEvent(ctx context.Context, client *firestore.Client, event Event) (Event, error) {
 	// Check if file_sha256 field exists and is a string
 	if event.FileSha256 == "" {

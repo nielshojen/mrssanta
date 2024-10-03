@@ -5,7 +5,6 @@ go 1.22.1
 require (
 	cloud.google.com/go/firestore v1.15.0
 	github.com/GoogleCloudPlatform/functions-framework-go v1.8.1
-	github.com/google/uuid v1.6.0
 )
 
 require (
@@ -20,6 +19,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.2 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect

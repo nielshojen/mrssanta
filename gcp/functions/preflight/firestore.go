@@ -10,8 +10,6 @@ import (
 	"cloud.google.com/go/firestore"
 )
 
-var client *firestore.Client
-
 func saveDevice(ctx context.Context, client *firestore.Client, w http.ResponseWriter, device *Device, machineID string) {
 
 	device.LastUpdated = time.Now()

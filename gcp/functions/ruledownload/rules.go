@@ -8,11 +8,8 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"google.golang.org/api/iterator"
 )
-
-var client *firestore.Client
 
 func getGlobalRules(ctx context.Context) ([]*Rule, error) {
 

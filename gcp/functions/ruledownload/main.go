@@ -9,6 +9,9 @@ import (
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
+var client *firestore.Client
+var firestoreDatabasePath string
+
 const batchSize = 100
 
 func init() {
@@ -20,7 +23,12 @@ func init() {
 		panic("GCP_PROJECT environment variable is not set")
 	}
 
-	client, err = firestore.NewClient(ctx, projectID)
+	firestoreDatabasePath = os.Getenv("FIRESTORE_DATABASE")
+	if firestoreDatabasePath == "" {
+		log.Fatal("FIRESTORE_DATABASE environment variable is not set")
+	}
+
+	client, err = firestore.NewClientWithDatabase(ctx, projectID, firestoreDatabasePath)
 	if err != nil {
 		log.Fatalf("Error initializing Cloud Firestore client: %v", err)
 	}
