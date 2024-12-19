@@ -1,9 +1,14 @@
 package eventupload
 
 import (
+	"bytes"
+	"compress/zlib"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"reflect"
 )
@@ -35,15 +40,35 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 	var request Request
 	var response Response
 
+	contentType := r.Header.Get("Content-Type")
+	if contentType != "application/json" {
+		http.Error(w, "Content-Type header must be application/json", http.StatusBadRequest)
+		return
+	}
+
 	// Get machine_id from query parameters
 	machineID := r.URL.Query().Get("machine_id")
 	if machineID != "" {
 		fmt.Println("Request from:", machineID)
 	}
 
-	// Parse request body
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Cannot parse request body: %v\n", err)
+	}
+	defer r.Body.Close()
+
+	// Decompress the data
+	decompressedData, err := decompressZlib(reqBody)
+	if err != nil {
+		log.Printf("Failed to decompress body: %v", err)
+		http.Error(w, "Failed to decompress request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := json.Unmarshal(decompressedData, &request); err != nil {
+		log.Printf("Failed to decode JSON from decompressed data: %v", err)
+		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
 		return
 	}
 
@@ -77,4 +102,19 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to encode response to JSON", http.StatusInternalServerError)
 		return
 	}
+}
+
+// decompressZlib decompresses zlib-compressed data
+func decompressZlib(data []byte) ([]byte, error) {
+	reader, err := zlib.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zlib reader: %w", err)
+	}
+	defer reader.Close()
+
+	var decompressedData bytes.Buffer
+	if _, err := io.Copy(&decompressedData, reader); err != nil {
+		return nil, fmt.Errorf("failed to decompress data: %w", err)
+	}
+	return decompressedData.Bytes(), nil
 }

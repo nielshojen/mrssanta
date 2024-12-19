@@ -24,7 +24,7 @@ Deployment shouldn't take more than 15-20 mins.
 
 We have a very basic rule syncing in place. Still need to do management API, more complex rule assignment and Web UI.
 
-Will be looking into makeing ot work on Azure as well at some point
+Will be looking into making it work on Azure as well at some point
 
 ### What's with the stupid name
 
