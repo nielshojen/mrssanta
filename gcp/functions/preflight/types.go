@@ -31,7 +31,7 @@ type Response struct {
 	EnableTransitiveRules    bool   `json:"enable_transitive_rules,omitempty"`
 	BatchSize                int    `json:"batch_size,omitempty"`
 	FullSyncInterval         int    `json:"full_sync_interval,omitempty"`
-	ClientMode               string `json:"client_mode,omitempty"`
+	ClientMode               int    `json:"client_mode,omitempty"`
 	AllowedPathRegEx         string `json:"allowed_path_regex,omitempty"`
 	BlockedPathRegEx         string `json:"blocked_path_regex,omitempty"`
 	BlockUSBMount            bool   `json:"block_usb_mount,omitempty"`

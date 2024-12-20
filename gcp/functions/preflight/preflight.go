@@ -53,8 +53,8 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{
 		BatchSize:             100,
-		FullSyncInterval:      600,
-		ClientMode:            "MONITOR",
+		FullSyncInterval:      60,
+		ClientMode:            2,
 		EnableBundles:         true,
 		EnableTransitiveRules: false,
 	}
