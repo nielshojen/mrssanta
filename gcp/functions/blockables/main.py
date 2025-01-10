@@ -6,7 +6,7 @@ import json
 from google.cloud import firestore
 
 # Initialize Firestore client with a specific database ID
-db = firestore.Client()
+db = firestore.Client(database=os.environ.get('FIRESTORE_DATABASE'))
 
 def get_device(identifier):
 
@@ -51,6 +51,7 @@ def get_rule(identifier):
 def blockables(request):
     request_args = request.args
 
+    print('request_args: %s' % request_args)
     
     response = {}
 
@@ -77,6 +78,6 @@ def blockables(request):
         else:
             response['file_sha256'] = file_identifier
         
-        print(response)
+        print('response: %s' % response)
 
     return render_template('index.html', response=response)
