@@ -40,6 +40,54 @@ func getGlobalRules(ctx context.Context) ([]*Rule, error) {
 	return rules, nil
 }
 
+func getMunkiRules(ctx context.Context) ([]*Rule, error) {
+
+	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("scope", "==", "munki").Where("assigned", "array-contains", 123123)
+	iter := query.Documents(ctx)
+
+	var rules []*Rule
+	for {
+		var r Rule
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		err = doc.DataTo(&r)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, &r)
+	}
+	return rules, nil
+}
+
+func getMachineRules(ctx context.Context) ([]*Rule, error) {
+
+	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("scope", "==", "machine").Where("assigned", "array-contains", 123123)
+	iter := query.Documents(ctx)
+
+	var rules []*Rule
+	for {
+		var r Rule
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		err = doc.DataTo(&r)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, &r)
+	}
+	return rules, nil
+}
+
 func paginateRules(rules []*Rule, r *http.Request) ([]*Rule, string) {
 	cursor := r.URL.Query().Get("cursor")
 	startIndex := 0
@@ -71,6 +119,7 @@ func paginateRules(rules []*Rule, r *http.Request) ([]*Rule, string) {
 func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	var reponse Response
+	var rules []*Rule
 
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
@@ -99,11 +148,26 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Logic to handle machine_id and cursor
-	rules, err := getGlobalRules(ctx)
+	globalrules, err := getGlobalRules(ctx)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get global rules: %v", err), http.StatusInternalServerError)
 		return
 	}
+	rules = append(rules, globalrules...)
+
+	munkirules, err := getMunkiRules(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get munki rules: %v", err), http.StatusInternalServerError)
+		return
+	}
+	rules = append(rules, munkirules...)
+
+	machinerules, err := getMachineRules(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get machine rules: %v", err), http.StatusInternalServerError)
+		return
+	}
+	rules = append(rules, machinerules...)
 
 	// Paginate rules
 	paginatedRules, cursor := paginateRules(rules, r)

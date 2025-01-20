@@ -6,3 +6,4 @@ mysql/
 .terraform*
 *.auto.tfvars
 *.json
+*openapi.yaml

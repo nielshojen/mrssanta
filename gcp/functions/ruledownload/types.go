@@ -12,6 +12,7 @@ type Rule struct {
 	FileBundleBinaryCount string `firestore:"file_bundle_binary_count" json:"file_bundle_binary_count,omitempty"`
 	FileBundleHash        string `firestore:"file_bundle_hash" json:"file_bundle_hash,omitempty"`
 	Scope                 string `firestore:"scope" json:"-"`
+	Assigned              string `firestore:"assigned" json:"-"`
 }
 
 type Device struct {
