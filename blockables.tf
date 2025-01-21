@@ -35,6 +35,7 @@ resource "google_cloudfunctions2_function" "blockables" {
       GCP_PROJECT = var.project_id
       FIRESTORE_DATABASE = google_firestore_database.database.name
       DB_PREFIX = var.service
+      VT_API_KEY = google_secret_manager_secret.virustotal_api_key.secret_id
     }
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.account.email

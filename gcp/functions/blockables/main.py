@@ -2,11 +2,45 @@ import functions_framework
 from flask import render_template
 import os
 import json
+import requests
 
 from google.cloud import firestore
 
+vt_api_key = os.environ.get('VT_API_KEY')
+
 # Initialize Firestore client with a specific database ID
 db = firestore.Client(database=os.environ.get('FIRESTORE_DATABASE'))
+
+def get_vt_result(file_hash):
+    check_failed = 0
+
+    parameters = {"resource": file_hash, "apikey": vt_api_key}
+
+    url = "https://www.virustotal.com/api/v3/files/%s" % file_hash
+
+    headers = {"accept": "application/json", "x-apikey": vt_api_key}
+
+    response = requests.get(url, headers=headers)
+
+    result = response.json()
+
+    if response.status_code == 200 and len(result['data']) > 0:
+        try:
+            malicious = result['data']['attributes']['last_analysis_stats']['malicious']
+        except:
+            malicious = 0
+            check_failed = 1
+    else:
+        malicious = 0
+        check_failed = 1
+
+    if check_failed == 0:
+        if malicious == 0:
+            return 1
+        else:
+            return 2
+    else:
+        return 0
 
 def get_device(identifier):
 
@@ -30,9 +64,29 @@ def get_binary(identifier):
     binary = binary_ref.get()
 
     if binary.exists:
-        return binary.to_dict()
+        data =  binary.to_dict()
+        if 'virustotalresult' not in data:
+            virustotalresult = get_vt_result(data['FileSha256'])
+            if virustotalresult is not None:
+                data['virustotalresult'] = virustotalresult
+                save_binary(data)
+        return data
     else:
         return None
+
+def save_binary(data):
+
+    # Define Firestore document path
+    doc_ref = db.collection('%s_binaries' % os.environ.get('DB_PREFIX')).document(data)
+
+    # Add Timestamp
+    data['last_updated'] = firestore.SERVER_TIMESTAMP
+
+    # Set data in Firestore with merge=True
+    doc_ref.set(data, merge=True)
+
+    
+    return data
 
 def get_rule(identifier):
 

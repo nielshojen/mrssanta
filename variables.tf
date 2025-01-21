@@ -44,6 +44,11 @@ variable "service_version" {
   default = "0.1"
 }
 
+variable "virustotal_api_key" {
+  type        = string
+  description = "VirusTotal API Key"
+}
+
 variable "labels" {
   type = map(string)
   description = "The labels to apply to the resources"

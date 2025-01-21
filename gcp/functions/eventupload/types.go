@@ -31,6 +31,7 @@ type Event struct {
 	SigningID                   string         `json:"signing_id,omitempty"`
 	TeamID                      string         `json:"team_id,omitempty"`
 	CDHash                      string         `json:"cdhash,omitempty"`
+	VirusTotalResult            int            `firestore:"virustutalresult" json:"virustotalresult,omitempty"`
 	LastUpdated                 time.Time      `firestore:"last_updated,omitempty"`
 	Severity                    string         `json:"severity,omitempty"`                      // For GCP logging output
 	Labels                      *Labels        `json:"logging.googleapis.com/labels,omitempty"` // For GCP logging output
