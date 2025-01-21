@@ -3,36 +3,36 @@ package eventupload
 import "time"
 
 type Event struct {
-	FileSha256                  string         `json:"file_sha256"`
-	FilePath                    string         `json:"file_path"`
-	FileName                    string         `json:"file_name"`
-	ExecutingUser               string         `json:"executing_user,omitempty"`
-	ExecutionTime               float64        `json:"execution_time,omitempty"`
-	LoggedinUsers               []string       `json:"loggedin_users,omitempty"`
-	CurrentSessions             []string       `json:"current_sessions,omitempty"`
-	Decision                    string         `json:"decision"`
-	FileBundleID                string         `json:"file_bundle_id,omitempty"`
-	FileBundlePath              string         `json:"file_bundle_path,omitempty"`
-	FileBundleExecutableRelPath string         `json:"file_bundle_executable_rel_path,omitempty"`
-	FileBundleName              string         `json:"file_bundle_name,omitempty"`
-	FileBundleVersion           string         `json:"file_bundle_version,omitempty"`
-	FileBundleVersionString     string         `json:"file_bundle_version_string,omitempty"`
-	FileBundleHash              string         `json:"file_bundle_hash,omitempty"`
-	FileBundleHashBillis        float64        `json:"file_bundle_hash_millis,omitempty"`
-	FileBundleBinaryCount       int            `json:"file_bundle_binary_count,omitempty"`
-	PID                         int            `json:"pid,omitempty"`
-	PPID                        int            `json:"ppid,omitempty"`
-	ParentName                  string         `json:"parent_name,omitempty"`
-	QuarantineDataURL           string         `json:"quarantine_data_url,omitempty"`
-	QuarantineRefererURL        string         `json:"quarantine_referer_url,omitempty"`
-	QuarantineTimestamp         float64        `json:"quarantine_timestamp,omitempty"`
-	QuarantineAgentBundleID     string         `json:"quarantine_agent_bundle_id,omitempty"`
-	SigningChain                []SigningChain `json:"signing_chain,omitempty"`
-	SigningID                   string         `json:"signing_id,omitempty"`
-	TeamID                      string         `json:"team_id,omitempty"`
-	CDHash                      string         `json:"cdhash,omitempty"`
-	VirusTotalResult            int            `firestore:"virustutalresult" json:"virustotalresult,omitempty"`
-	LastUpdated                 time.Time      `firestore:"last_updated,omitempty"`
+	FileSha256                  string         `firestore:"FileSha256" json:"file_sha256"`
+	FilePath                    string         `firestore:"FilePath" json:"file_path"`
+	FileName                    string         `firestore:"FileName" json:"file_name"`
+	ExecutingUser               string         `firestore:"ExecutingUser" json:"executing_user,omitempty"`
+	ExecutionTime               float64        `firestore:"ExecutionTime" json:"execution_time,omitempty"`
+	LoggedinUsers               []string       `firestore:"LoggedinUsers" json:"loggedin_users,omitempty"`
+	CurrentSessions             []string       `firestore:"CurrentSessions" json:"current_sessions,omitempty"`
+	Decision                    string         `firestore:"Decision" json:"decision"`
+	FileBundleID                string         `firestore:"FileBundleID" json:"file_bundle_id,omitempty"`
+	FileBundlePath              string         `firestore:"FileBundlePath" json:"file_bundle_path,omitempty"`
+	FileBundleExecutableRelPath string         `firestore:"FileBundleExecutableRelPath" json:"file_bundle_executable_rel_path,omitempty"`
+	FileBundleName              string         `firestore:"FileBundleName" json:"file_bundle_name,omitempty"`
+	FileBundleVersion           string         `firestore:"FileBundleVersion" json:"file_bundle_version,omitempty"`
+	FileBundleVersionString     string         `firestore:"FileBundleVersionString" json:"file_bundle_version_string,omitempty"`
+	FileBundleHash              string         `firestore:"FileBundleHash" json:"file_bundle_hash,omitempty"`
+	FileBundleHashMillis        float64        `firestore:"FileBundleHashMillis" json:"file_bundle_hash_millis,omitempty"`
+	FileBundleBinaryCount       int            `firestore:"FileBundleBinaryCount" json:"file_bundle_binary_count,omitempty"`
+	PID                         int            `firestore:"PID" json:"pid,omitempty"`
+	PPID                        int            `firestore:"PPID" json:"ppid,omitempty"`
+	ParentName                  string         `firestore:"ParentName" json:"parent_name,omitempty"`
+	QuarantineDataURL           string         `firestore:"QuarantineDataURL" json:"quarantine_data_url,omitempty"`
+	QuarantineRefererURL        string         `firestore:"QuarantineRefererURL" json:"quarantine_referer_url,omitempty"`
+	QuarantineTimestamp         float64        `firestore:"QuarantineTimestamp" json:"quarantine_timestamp,omitempty"`
+	QuarantineAgentBundleID     string         `firestore:"QuarantineAgentBundleID" json:"quarantine_agent_bundle_id,omitempty"`
+	SigningChain                []SigningChain `firestore:"SigningChain" json:"signing_chain,omitempty"`
+	SigningID                   string         `firestore:"SigningID" json:"signing_id,omitempty"`
+	TeamID                      string         `firestore:"TeamID" json:"team_id,omitempty"`
+	CDHash                      string         `firestore:"CDHash" json:"cdhash,omitempty"`
+	VirusTotalResult            int            `firestore:"VirusTotalResult" json:"virustotalresult,omitempty"`
+	LastUpdated                 time.Time      `firestore:"LastUpdated,omitempty"`
 	Severity                    string         `json:"severity,omitempty"`                      // For GCP logging output
 	Labels                      *Labels        `json:"logging.googleapis.com/labels,omitempty"` // For GCP logging output
 }

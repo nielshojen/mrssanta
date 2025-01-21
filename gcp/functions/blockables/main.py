@@ -14,8 +14,6 @@ db = firestore.Client(database=os.environ.get('FIRESTORE_DATABASE'))
 def get_vt_result(file_hash):
     check_failed = 0
 
-    parameters = {"resource": file_hash, "apikey": vt_api_key}
-
     url = "https://www.virustotal.com/api/v3/files/%s" % file_hash
 
     headers = {"accept": "application/json", "x-apikey": vt_api_key}
@@ -65,19 +63,19 @@ def get_binary(identifier):
 
     if binary.exists:
         data =  binary.to_dict()
-        if 'virustotalresult' not in data:
+        if 'VirusTotalResult' not in data or data['VirusTotalResult'] == 0:
             virustotalresult = get_vt_result(data['FileSha256'])
             if virustotalresult is not None:
-                data['virustotalresult'] = virustotalresult
-                save_binary(data)
+                data['VirusTotalResult'] = virustotalresult
+                save_binary(identifier, data)
         return data
     else:
         return None
 
-def save_binary(data):
+def save_binary(identifier, data):
 
     # Define Firestore document path
-    doc_ref = db.collection('%s_binaries' % os.environ.get('DB_PREFIX')).document(data)
+    doc_ref = db.collection('%s_binaries' % os.environ.get('DB_PREFIX')).document(identifier)
 
     # Add Timestamp
     data['last_updated'] = firestore.SERVER_TIMESTAMP
@@ -85,7 +83,6 @@ def save_binary(data):
     # Set data in Firestore with merge=True
     doc_ref.set(data, merge=True)
 
-    
     return data
 
 def get_rule(identifier):
@@ -105,7 +102,7 @@ def get_rule(identifier):
 def blockables(request):
     request_args = request.args
 
-    print('request_args: %s' % request_args)
+    # print('request_args: %s' % request_args)
     
     response = {}
 
@@ -119,12 +116,24 @@ def blockables(request):
         file_identifier = request_args.getlist('file_identifier')[0]
         binary = get_binary(file_identifier)
         if binary:
-            if 'SigningChain' in binary:
+            response.update(binary)
+            if 'SigningChain' in binary and binary['SigningChain']:
                 signing_chain = binary['SigningChain']
-                binary['signed_by'] = signing_chain[0]['Org']
-                response.update(binary)
-            if 'SigningID' in binary:
+                binary['SignedBy'] = signing_chain[0]['Org']
+            if 'SigningID' in binary and binary['SigningID']:
                 rule = get_rule(binary['SigningID'])
+                if rule:
+                    response['scope'] = rule['scope']
+                    response['policy'] = rule['policy']
+                    response['custom_msg'] = rule['custom_msg']
+            elif 'FileSha256' in binary and binary['FileSha256']:
+                rule = get_rule(binary['FileSha256'])
+                if rule:
+                    response['scope'] = rule['scope']
+                    response['policy'] = rule['policy']
+                    response['custom_msg'] = rule['custom_msg']
+            elif 'CDHash' in binary and binary['CDHash']:
+                rule = get_rule(binary['CDHash'])
                 if rule:
                     response['scope'] = rule['scope']
                     response['policy'] = rule['policy']
@@ -132,6 +141,6 @@ def blockables(request):
         else:
             response['file_sha256'] = file_identifier
         
-        print('response: %s' % response)
+        # print('response: %s' % response)
 
     return render_template('index.html', response=response)

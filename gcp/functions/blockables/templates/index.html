@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
   <title>Mrs Santa</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <style>
     .btn-secondary,
     .btn-secondary:hover,
@@ -51,7 +51,7 @@
   </style>
  </head>
 <body class="d-flex h-100 text-white bg-dark">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
   <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
     <header class="mb-2">
@@ -63,6 +63,41 @@
         </nav>
       </div>
     </header>
+
+    <div class="row">
+
+      <div class="col-lg-12">
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Verify that intended to run this Application</h6>
+            </div>
+            <div class="card-body">
+              {% if response.FileBundleName %}
+              <p class="card-text">File Bundle Name: {{ response.FileBundleName }}</p>
+              {% endif %}
+              {% if response.FileBundleVersion %}
+              <p class="card-text">Version: {{ response.FileBundleVersion }}</p>
+              {% endif %}
+              {% if response.SignedBy %}
+              <p class="card-text">Signed By: {{ response.SignedBy }}</p>
+              {% endif %}
+              {% if response.FilePath and response.FileName %}
+              <p class="card-text">Local Path: {{ response.FilePath }}/{{ response.FileName }}</p>
+              {% endif %}
+              {% if response.VirusTotalResult == 0 %}
+              <p class="card-text">VirusTotal Scan Result: No Scan Available</p>
+              {% elif response.VirusTotalResult == 1 %}
+              <p class="card-text">VirusTotal Scan Result: <b class="text-success">Safe</b></p>
+              {% elif response.VirusTotalResult == 2 %}
+              <p class="card-text">VirusTotal Scan Result: <b class="text-success">Malicious</b></p>
+              {% endif %}
+            </div>
+        </div>
+
+      </div>
+
+    </div>
 
     <div class="row">
 
@@ -85,48 +120,71 @@
 
       </div>
       {% endif %}
+
+      {% elif response.scope == 'munki' %}
+      {% if response.policy == 'ALLOWLIST' %}
+      <div class="col-lg-12">
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold">Rule</h6>
+            </div>
+            <div class="card-body">
+              {% if response.custom_msg %}
+              <p class="card-text">{{ response.custom_msg }}</p>
+              {% else %}
+              <p class="card-text">{{ response.FileName }} is only allowed if installed from Managed Software Centre</p>
+              {% endif %}
+            </div>
+        </div>
+
+      </div>
       {% endif %}
 
-    </div>
-
-    <div class="row">
-
+      {% elif response.scope == 'machine' %}
+      {% if response.policy == 'ALLOWLIST' %}
       <div class="col-lg-12">
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">Device Information</h6>
+                <h6 class="m-0 font-weight-bold">Add Rule?</h6>
             </div>
             <div class="card-body">
-              <p class="card-text">Hostname: {{ response.hostname }}</p>
-              <p class="card-text">User: {{ response.primary_user }}</p>
+              {% if response.VirusTotalResult == 2 %}
+              <p class="card-text">{{ response.FileName }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
+              {% else %}
+              <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac?</p>
+              <button type="button" class="btn btn-outline-success" type="submit" value="allow" id="allow">Allow</button>
+              <button type="button" class="btn btn-outline-danger" type="submit" value="report" id="report">Report as Malware</button>
+              <button type="button" class="btn btn-outline-secondary" type="submit" value="close" id="close">Close</button>
+              {% endif %}
             </div>
         </div>
 
       </div>
+      {% endif %}
 
-    </div>
-
-    <div class="row">
-
+      {% else%}
       <div class="col-lg-12">
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">Blocked Binary Information</h6>
+                <h6 class="m-0 font-weight-bold">Add Rule?</h6>
             </div>
             <div class="card-body">
-              <p class="card-text">File Bundle Name: {{ response.FileBundleName }}</p>
-              <p class="card-text">Version: {{ response.FileBundleVersion }}</p>
-              <p class="card-text">Bundle ID: {{ response.FileBundleID }}</p>
-              <p class="card-text">File Name: {{ response.FileName }}</p>
-              <p class="card-text">File Path: {{ response.FilePath }}</p>
-              <p class="card-text">Signed By: {{ response.signed_by }}</p>
-              <p class="card-text">File Bundle Version: {{ response.FileBundleVersionString }}</p>
+              {% if response.VirusTotalResult == 2 %}
+              <p class="card-text">{{ response.FileName }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
+              {% else %}
+              <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac?</p>
+              <button type="button" class="btn btn-outline-success" type="submit" value="allow" id="allow-new">Allow</button>
+              <button type="button" class="btn btn-outline-danger" type="submit" value="report" id="report-new">Report as Malware</button>
+              <button type="button" class="btn btn-outline-secondary" type="submit" value="close" id="close-new">Close</button>
+              {% endif %}
             </div>
         </div>
 
       </div>
+      {% endif %}
 
     </div>
 
@@ -143,21 +201,57 @@
             </h2>
             <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
               <div class="accordion-body">
-                <p>Client Mode: {{ response.client_mode }}</p>
-                <p>OS Version: {{ response.os_version }}</p>
-                <p>OS Build: {{ response.os_build }}</p>
-                <p>Serial Number: {{ response.serial_num }}</p>
-                <p>model_identifier: {{ response.model_identifier }}</p>
-                <p>cdhash_rule_count: {{ response.cdhash_rule_count }}</p>
-                <p>signingid_rule_count: {{ response.signingid_rule_count }}</p>
-                <p>binary_rule_count: {{ response.binary_rule_count }}</p>
-                <p>teamid_rule_count: {{ response.teamid_rule_count }}</p>
-                <p>compiler_rule_count: {{ response.compiler_rule_count }}</p>
-                <p>certificate_rule_count: {{ response.certificate_rule_count }}</p>
-                <p>transitive_rule_count: {{ response.transitive_rule_count }}</p>
-                <p>request_clean_sync: {{ response.request_clean_sync }}</p>
-                <p>santa_version: {{ response.santa_version }}</p>
-                <p>machine_id: {{ response.machine_id }}</p>
+                {% if response.Hostname %}
+                <p class="card-text">Hostname: {{ response.Hostname }}</p>
+                {% endif %}
+                {% if response.PrimaryUser %}
+                <p class="card-text">User: {{ response.PrimaryUser }}</p>
+                {% endif %}
+                {% if response.OSVersion %}
+                <p class="card-text">OS Version: {{ response.OSVersion }}</p>
+                {% endif %}
+                {% if response.OSBuild %}
+                <p class="card-text">OS Build: {{ response.OSBuild }}</p>
+                {% endif %}
+                {% if response.SerialNumber %}
+                <p class="card-text">Serial Number: {{ response.SerialNumber }}</p>
+                {% endif %}
+                {% if response.ModelIdentifier %}
+                <p class="card-text">Model Identifier: {{ response.ModelIdentifier }}</p>
+                {% endif %}
+                {% if response.SantaVersion %}
+                <p class="card-text">Santa Version: {{ response.SantaVersion }}</p>
+                {% endif %}
+                {% if response.ClientMode %}
+                <p class="card-text">Client Mode: {{ response.ClientMode }}</p>
+                {% endif %}
+                {% if response.CDHashRuleCount %}
+                <p class="card-text">CD Hash Rule Count: {{ response.CDHashRuleCount }}</p>
+                {% endif %}
+                {% if response.SigningIDRuleCount %}
+                <p class="card-text">Signing ID Rule Count: {{ response.SigningIDRuleCount }}</p>
+                {% endif %}
+                {% if response.BinaryRuleCount %}
+                <p class="card-text">Binary Rule Count: {{ response.BinaryRuleCount }}</p>
+                {% endif %}
+                {% if response.TeamIDRuleCount %}
+                <p class="card-text">Team ID Rule Count: {{ response.TeamIDRuleCount }}</p>
+                {% endif %}
+                {% if response.CompilerRuleCount %}
+                <p class="card-text">Compiler Rule Count: {{ response.CompilerRuleCount }}</p>
+                {% endif %}
+                {% if response.CertificateRuleCount %}
+                <p class="card-text">Certificate Rule Count: {{ response.CertificateRuleCount }}</p>
+                {% endif %}
+                {% if response.TransitiveRuleCount %}
+                <p class="card-text">Transitive Rule Count: {{ response.TransitiveRuleCount }}</p>
+                {% endif %}
+                {% if response.RequestCleanSync %}
+                <p class="card-text">Request Clean Sync: {{ response.RequestCleanSync }}</p>
+                {% endif %}
+                {% if response.machine_id %}
+                <p class="card-text">Machine ID: {{ response.machine_id }}</p>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -169,15 +263,50 @@
             </h2>
             <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
               <div class="accordion-body">
-                <p>Signing ID: {{ response.SigningID }}</p>
-                <p>Team ID: {{ response.TeamID }}</p>
-                <p>File Hash: {{ response.FileSha256 }}</p>
-                <p>Bundle Hash: {{ response.FileBundleHash }}</p>
-                <p>FileBundleExecutableRelPath: {{ response.FileBundleExecutableRelPath }}</p>
-                <p>Signing Chain:</p>
+                {% if response.FileBundleName %}
+                <p class="card-text">File Bundle Name: {{ response.FileBundleName }}</p>
+                {% endif %}
+                {% if response.FileBundleVersion %}
+                <p class="card-text">Version: {{ response.FileBundleVersion }}</p>
+                {% endif %}
+                {% if response.FileBundleID %}
+                <p class="card-text">Bundle ID: {{ response.FileBundleID }}</p>
+                {% endif %}
+                {% if response.FileName %}
+                <p class="card-text">File Name: {{ response.FileName }}</p>
+                {% endif %}
+                {% if response.FilePath %}
+                <p class="card-text">File Path: {{ response.FilePath }}</p>
+                {% endif %}
+                {% if response.SignedBy %}
+                <p class="card-text">Signed By: {{ response.SignedBy }}</p>
+                {% endif %}
+                {% if response.FileBundleVersionString %}
+                <p class="card-text">File Bundle Version: {{ response.FileBundleVersionString }}</p>
+                {% endif %}
+                {% if response.SigningID %}
+                <p class="card-text">Signing ID: {{ response.SigningID }}</p>
+                {% endif %}
+                {% if response.TeamID %}
+                <p class="card-text">Team ID: {{ response.TeamID }}</p>
+                {% endif %}
+                {% if response.FileSha256 %}
+                <p class="card-text">File Hash: {{ response.FileSha256 }}</p>
+                {% endif %}
+                {% if response.FileBundleHash %}
+                <p class="card-text">Bundle Hash: {{ response.FileBundleHash }}</p>
+                {% endif %}
+                {% if response.FileBundleExecutableRelPath %}
+                <p class="card-text">FileBundleExecutableRelPath: {{ response.FileBundleExecutableRelPath }}</p>
+                {% endif %}
+                {% if response.SigningChain %}
+                <p class="card-text">Signing Chain:</p>
+                <ul class="list-group list-group-numbered">
                 {% for i in response.SigningChain %}
-                <p>{{ i.CN }}</p>
+                  <li class="list-group-item">{{ i.CN }}</li>
                 {% endfor %}
+                {% endif %}
+              </ul>
               </div>
             </div>
           </div>
@@ -188,4 +317,5 @@
     </div>
 
   </div>
+  
 </body>
