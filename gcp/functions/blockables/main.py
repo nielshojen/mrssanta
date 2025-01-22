@@ -102,45 +102,48 @@ def get_rule(identifier):
 def blockables(request):
     request_args = request.args
 
-    # print('request_args: %s' % request_args)
+    if request.method == "GET":
     
-    response = {}
+        response = {}
 
-    if request_args and "machine_id" in request_args:
-        machine_id = request_args.getlist('machine_id')[0]
-        device = get_device(machine_id)
-        if device:
-            response.update(device)
+        if request_args and "machine_id" in request_args:
+            machine_id = request_args.getlist('machine_id')[0]
+            device = get_device(machine_id)
+            if device:
+                response.update(device)
 
-    if request_args and "file_identifier" in request_args:
-        file_identifier = request_args.getlist('file_identifier')[0]
-        binary = get_binary(file_identifier)
-        if binary:
-            response.update(binary)
-            if 'SigningChain' in binary and binary['SigningChain']:
-                signing_chain = binary['SigningChain']
-                binary['SignedBy'] = signing_chain[0]['Org']
-            if 'SigningID' in binary and binary['SigningID']:
-                rule = get_rule(binary['SigningID'])
-                if rule:
-                    response['scope'] = rule['scope']
-                    response['policy'] = rule['policy']
-                    response['custom_msg'] = rule['custom_msg']
-            elif 'FileSha256' in binary and binary['FileSha256']:
-                rule = get_rule(binary['FileSha256'])
-                if rule:
-                    response['scope'] = rule['scope']
-                    response['policy'] = rule['policy']
-                    response['custom_msg'] = rule['custom_msg']
-            elif 'CDHash' in binary and binary['CDHash']:
-                rule = get_rule(binary['CDHash'])
-                if rule:
-                    response['scope'] = rule['scope']
-                    response['policy'] = rule['policy']
-                    response['custom_msg'] = rule['custom_msg']
-        else:
-            response['file_sha256'] = file_identifier
-        
-        # print('response: %s' % response)
+        if request_args and "file_identifier" in request_args:
+            file_identifier = request_args.getlist('file_identifier')[0]
+            binary = get_binary(file_identifier)
+            if binary:
+                response.update(binary)
+                if 'SigningChain' in binary and binary['SigningChain']:
+                    signing_chain = binary['SigningChain']
+                    binary['SignedBy'] = signing_chain[0]['Org']
+                if 'SigningID' in binary and binary['SigningID']:
+                    rule = get_rule(binary['SigningID'])
+                    if rule:
+                        response['scope'] = rule['scope']
+                        response['policy'] = rule['policy']
+                        response['custom_msg'] = rule['custom_msg']
+                elif 'FileSha256' in binary and binary['FileSha256']:
+                    rule = get_rule(binary['FileSha256'])
+                    if rule:
+                        response['scope'] = rule['scope']
+                        response['policy'] = rule['policy']
+                        response['custom_msg'] = rule['custom_msg']
+                elif 'CDHash' in binary and binary['CDHash']:
+                    rule = get_rule(binary['CDHash'])
+                    if rule:
+                        response['scope'] = rule['scope']
+                        response['policy'] = rule['policy']
+                        response['custom_msg'] = rule['custom_msg']
+            else:
+                response['file_sha256'] = file_identifier
+            
+            # print('response: %s' % response)
 
-    return render_template('index.html', response=response)
+        return render_template('index.html', response=response)
+
+    if request.method == "POST":
+        return 'POST request not implemented yet'

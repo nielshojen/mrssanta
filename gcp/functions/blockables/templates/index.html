@@ -50,7 +50,7 @@
     }
   </style>
  </head>
-<body class="d-flex h-100 text-white bg-dark">
+<body class="d-flex h-100 text-white bg-secondary">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
   <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
@@ -70,7 +70,7 @@
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">Verify that intended to run this Application</h6>
+                <h6 class="m-0 font-weight-bold">Verify that intended to run this Application?</h6>
             </div>
             <div class="card-body">
               {% if response.FileBundleName %}
@@ -153,7 +153,7 @@
               {% if response.VirusTotalResult == 2 %}
               <p class="card-text">{{ response.FileName }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
               {% else %}
-              <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac?</p>
+              <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac({{ response.Hostname.split(".")[0] }})?</p>
               <button type="button" class="btn btn-outline-success" type="submit" value="allow" id="allow">Allow</button>
               <button type="button" class="btn btn-outline-danger" type="submit" value="report" id="report">Report as Malware</button>
               <button type="button" class="btn btn-outline-secondary" type="submit" value="close" id="close">Close</button>
@@ -175,7 +175,7 @@
               {% if response.VirusTotalResult == 2 %}
               <p class="card-text">{{ response.FileName }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
               {% else %}
-              <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac?</p>
+              <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac({{ response.Hostname.split(".")[0] }})?</p>
               <button type="button" class="btn btn-outline-success" type="submit" value="allow" id="allow-new">Allow</button>
               <button type="button" class="btn btn-outline-danger" type="submit" value="report" id="report-new">Report as Malware</button>
               <button type="button" class="btn btn-outline-secondary" type="submit" value="close" id="close-new">Close</button>
