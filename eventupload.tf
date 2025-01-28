@@ -40,6 +40,12 @@ resource "google_cloudfunctions2_function" "eventupload" {
       TEAM = var.team
       VERSION = var.service_version
     }
+    secret_environment_variables {
+      key        = "API_KEY"
+      project_id = var.project_id
+      secret     = google_secret_manager_secret.api_key.secret_id
+      version    = "latest"
+    }
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.account.email
   }

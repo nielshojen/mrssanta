@@ -1,6 +1,10 @@
 package preflight
 
-import "time"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
 
 // Device represents the data received in the request
 type Device struct {
@@ -18,7 +22,7 @@ type Device struct {
 	TeamIDRuleCount      int       `firestore:"TeamIDRuleCount,omitempty" json:"teamid_rule_count,omitempty"`
 	SigningIDRuleCount   int       `firestore:"SigningIDRuleCount,omitempty" json:"signingid_rule_count,omitempty"`
 	CDHashRuleCount      int       `firestore:"CDHashRuleCount,omitempty" json:"cdhash_rule_count,omitempty"`
-	ClientMode           string    `firestore:"ClientMode" json:"client_mode"`
+	ClientMode           int       `firestore:"ClientMode" json:"-"`
 	RequestCleanSync     bool      `firestore:"RequestCleanSync,omitempty" json:"request_clean_sync,omitempty"`
 	SyncCursor           string    `firestore:"SyncCursor,omitempty" json:"sync_cursor,omitempty"`
 	SyncPage             int       `firestore:"SyncPage,omitempty" json:"sync_page,omitempty"`
@@ -31,11 +35,41 @@ type Response struct {
 	EnableTransitiveRules    bool   `json:"enable_transitive_rules,omitempty"`
 	BatchSize                int    `json:"batch_size,omitempty"`
 	FullSyncInterval         int    `json:"full_sync_interval,omitempty"`
-	ClientMode               int    `json:"client_mode,omitempty"`
+	ClientMode               *int   `json:"client_mode,omitempty"`
 	AllowedPathRegEx         string `json:"allowed_path_regex,omitempty"`
 	BlockedPathRegEx         string `json:"blocked_path_regex,omitempty"`
 	BlockUSBMount            bool   `json:"block_usb_mount,omitempty"`
 	RemountUSBMode           string `json:"remount_usb_mode,omitempty"`
 	SyncType                 string `json:"sync_type,omitempty"`
 	OverrideFileAccessAction string `json:"override_file_access_action,omitempty"`
+}
+
+// Custom unmarshaling to handle ClientMode as a string
+func (d *Device) UnmarshalJSON(data []byte) error {
+	type Alias Device // Avoid recursion
+	aux := &struct {
+		ClientMode string `json:"client_mode"`
+		*Alias
+	}{
+		Alias: (*Alias)(d),
+	}
+
+	// Unmarshal JSON into the auxiliary struct
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Translate the string client_mode into an integer
+	switch aux.ClientMode {
+	case "MONITOR":
+		d.ClientMode = 1
+	case "LOCKDOWN":
+		d.ClientMode = 2
+	case "STANDALONE":
+		d.ClientMode = 3
+	default:
+		return fmt.Errorf("invalid client_mode value: %s", aux.ClientMode)
+	}
+
+	return nil
 }

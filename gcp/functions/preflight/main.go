@@ -12,6 +12,8 @@ import (
 var client *firestore.Client
 var firestoreDatabasePath string
 
+var validAPIKey = os.Getenv("API_KEY")
+
 func init() {
 	var err error
 	ctx := context.Background()

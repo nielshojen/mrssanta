@@ -12,6 +12,8 @@ import (
 var client *firestore.Client
 var firestoreDatabasePath string
 
+var validAPIKey = os.Getenv("API_KEY")
+
 const batchSize = 100
 
 func init() {

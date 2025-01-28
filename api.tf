@@ -1,67 +1,59 @@
-resource "google_cloud_run_service" "api" {
-  name                       = "${var.service}-api"
-  location                   = var.region
-  autogenerate_revision_name = true
+data "archive_file" "api" {
+  type        = "zip"
+  output_path = "${path.module}/gcp/functions/api.zip"
+  source_dir  = "${path.module}/gcp/functions/api"
+}
 
-  metadata {
-    labels = {
-      env = "${var.environment}"
-      app = "${var.service}"
-      service = "${var.environment}"
-      owner = "${var.owner}"
-      team = "${var.team}"
-      version = replace(var.service_version, ".", "-"),
-    }
-    annotations = {
-      "run.googleapis.com/ingress"        = "internal-and-cloud-load-balancing"
-      "run.googleapis.com/ingress-status" = "internal-and-cloud-load-balancing"
-    }
-  }
+resource "google_storage_bucket_object" "api" {
+  name   = "api.zip"
+  bucket = google_storage_bucket.source.name
+  source = "${path.module}/gcp/functions/api.zip"
+}
 
-  template {
-    spec {
-      service_account_name = google_service_account.account.email
-      containers {
-        image = "${google_artifact_registry_repository.images.location}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.images.repository_id}/${var.service}-api:${var.service_version}"
+resource "google_cloudfunctions2_function" "api" {
+  name = "${var.service}-api"
+  location = var.region
+  description = var.service
 
-        env {
-          name = "GCP_PROJECT"
-          value = var.project_id
-        }
-
-        env {
-          name = "FIRESTORE_DATABASE"
-          value = google_firestore_database.database.name
-        }
-
-        env {
-          name = "DB_PREFIX"
-          value = var.service
-        }
-      }
-    }
-
-    metadata {
-      labels = {
-        env = "${var.environment}"
-        app = "${var.service}"
-        service = "${var.environment}"
-        owner = "${var.owner}"
-        team = "${var.team}"
-        version = replace(var.service_version, ".", "-"),
-      }
-      annotations = {
-        "autoscaling.knative.dev/minScale"        = "0"
-        "autoscaling.knative.dev/maxScale"        = "2"
-        "run.googleapis.com/client-name"          = "terraform"
-        "run.googleapis.com/cpu-throttling"       = "true"
-        "run.googleapis.com/startup-cpu-boost"    = "true"
+  build_config {
+    runtime = "go121"
+    entry_point = "api"
+    source {
+      storage_source {
+        bucket = google_storage_bucket.source.name
+        object = google_storage_bucket_object.api.name
       }
     }
   }
 
-  traffic {
-    percent         = 100
-    latest_revision = true
+  service_config {
+    max_instance_count  = 10
+    available_memory    = "256M"
+    timeout_seconds     = 60
+    environment_variables = {
+      LOG_EXECUTION_ID = "true"
+      GCP_PROJECT = var.project_id
+      FIRESTORE_DATABASE = google_firestore_database.database.name
+      DB_PREFIX = var.service
+    }
+    secret_environment_variables {
+      key        = "API_KEY"
+      project_id = var.project_id
+      secret     = google_secret_manager_secret.api_key.secret_id
+      version    = "latest"
+    }
+    all_traffic_on_latest_revision = true
+    service_account_email = google_service_account.account.email
   }
+  
+  labels = "${merge(var.labels, {
+    env = "${var.environment}"
+    app = "${var.service}"
+    service = "${var.environment}"
+    owner = "${var.owner}"
+    team = "${var.team}"
+    version = replace(var.service_version, ".", "-"),
+  })}"
+
+  depends_on = [ google_storage_bucket_object.api ]
 }

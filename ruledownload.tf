@@ -36,6 +36,12 @@ resource "google_cloudfunctions2_function" "ruledownload" {
       FIRESTORE_DATABASE = google_firestore_database.database.name
       DB_PREFIX = var.service
     }
+    secret_environment_variables {
+      key        = "API_KEY"
+      project_id = var.project_id
+      secret     = google_secret_manager_secret.api_key.secret_id
+      version    = "latest"
+    }
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.account.email
   }

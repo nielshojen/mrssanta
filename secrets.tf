@@ -25,3 +25,37 @@ resource "google_secret_manager_secret_iam_binding" "virustotal_api_key" {
   role      = "roles/secretmanager.secretAccessor"
   members   = ["serviceAccount:${google_service_account.account.email}"]
 }
+
+# API Key
+resource "random_password" "api_key" {
+  length           = 32
+  special          = false
+}
+
+resource "google_secret_manager_secret" "api_key" {
+  secret_id = "${var.service}-api-key"
+
+  labels = "${merge(var.labels, {
+      app     = "${var.service}",
+      service = "${var.service}",
+      env     = "prod",
+  })}"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
+resource "google_secret_manager_secret_version" "api_key" {
+  secret      = google_secret_manager_secret.api_key.id
+  secret_data = var.virustotal_api_key
+}
+
+resource "google_secret_manager_secret_iam_binding" "api_key" {
+
+  secret_id = google_secret_manager_secret.api_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  members   = ["serviceAccount:${google_service_account.account.email}"]
+}

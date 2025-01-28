@@ -40,6 +40,16 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 	var request Request
 	var response Response
 
+	// Extract the API key from the header
+	apiKey := r.Header.Get("X-API-Key")
+
+	// Validate the API key
+	if apiKey != validAPIKey {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprintf(w, `{"error": "Unauthorized"}`)
+		return
+	}
+
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		http.Error(w, "Content-Type header must be application/json", http.StatusBadRequest)

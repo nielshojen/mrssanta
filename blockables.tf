@@ -37,6 +37,12 @@ resource "google_cloudfunctions2_function" "blockables" {
       DB_PREFIX = var.service
     }
     secret_environment_variables {
+      key        = "API_KEY"
+      project_id = var.project_id
+      secret     = google_secret_manager_secret.api_key.secret_id
+      version    = "latest"
+    }
+    secret_environment_variables {
       key        = "VT_API_KEY"
       project_id = var.project_id
       secret     = google_secret_manager_secret.virustotal_api_key.secret_id

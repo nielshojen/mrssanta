@@ -13,7 +13,7 @@ paths:
   /santa/preflight/{machine_id}:
     post:
       summary: "Handle preflight requests"
-      operationId: preflight
+      operationId:  preflight
       x-google-backend:
         address: ${ PREFLIGHT_URL }
       parameters:
@@ -36,7 +36,7 @@ paths:
   /santa/eventupload/{machine_id}:
     post:
       summary: "Handle eventupload requests"
-      operationId: eventupload
+      operationId:  eventupload
       x-google-backend:
         address: ${ EVENTUPLOAD_URL }
       parameters:
@@ -59,7 +59,7 @@ paths:
   /santa/ruledownload/{machine_id}:
     post:
       summary: "Handle ruledownload requests"
-      operationId: ruledownload
+      operationId:  ruledownload
       x-google-backend:
         address: ${ RULEDOWNLOAD_URL }
       parameters:
@@ -82,7 +82,7 @@ paths:
   /santa/postflight/{machine_id}:
     post:
       summary: "Handle postflight requests"
-      operationId: postflight
+      operationId:  postflight
       x-google-backend:
         address: ${ POSTFLIGHT_URL }
       parameters:
@@ -103,7 +103,7 @@ paths:
   /santa/xsrf/{machine_id}:
     post:
       summary: "Handle xsrf requests"
-      operationId: xsrf
+      operationId:  xsrf
       x-google-backend:
         address: ${ XSRF_URL }
       parameters:
@@ -148,7 +148,7 @@ paths:
   /api:
     get:
       summary: "Handle api requests"
-      operationId: apir
+      operationId: api
       x-google-backend:
         address: ${ API_URL }
       responses:
@@ -156,24 +156,35 @@ paths:
           description: "Successful response"
           schema:
             $ref: '#/definitions/AnyValue'
-  /api/rules:
+  /api/{endpoint}: 
     get:
       summary: "Handle api requests"
-      operationId: apirules
+      operationId: apiendpoint
       x-google-backend:
-        address: ${ API_URL }/rules
+        address: ${ API_URL }
+      parameters:
+        - name: endpoint
+          in: path
+          required: true
+          type: string
+          description: "endpoint"
       responses:
         200:
           description: "Successful response"
           schema:
             $ref: '#/definitions/AnyValue'
-  /api/rules/{id}:
+  /api/{endpoint}/{id}:
     get:
       summary: "Handle api requests"
-      operationId: apirule
+      operationId: apiendpointid
       x-google-backend:
-        address: ${ API_URL }/rules/{id}
+        address: ${ API_URL }
       parameters:
+        - name: endpoint
+          in: path
+          required: true
+          type: string
+          description: "endpoint"
         - name: id
           in: path
           required: true
@@ -435,7 +446,7 @@ definitions:
         type: "string"
         description: "The number of rules that were processed"
 securityDefinitions:
-  apiKey:
+  ApiKeyAuth:
     type: apiKey
+    name: X-API-Key
     in: header
-    name: X-API-KEY

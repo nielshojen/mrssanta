@@ -1,9 +1,3 @@
-provider "google" {
-  project = var.project_id
-  region  = var.region
-  zone    = var.zone
-}
-
 resource "local_file" "api_gateway_config" {
   content = templatefile("${path.module}/gcp/apigateway/template.yaml", {
     PREFLIGHT_URL = google_cloudfunctions2_function.preflight.url
@@ -12,7 +6,7 @@ resource "local_file" "api_gateway_config" {
     POSTFLIGHT_URL = google_cloudfunctions2_function.postflight.url
     XSRF_URL = google_cloudfunctions2_function.xsrf.url
     BLOCKABLES_URL = google_cloudfunctions2_function.blockables.url
-    API_URL = google_cloud_run_service.api.status.0.url
+    API_URL =  google_cloudfunctions2_function.api.url
   })
   filename = "${path.module}/gcp/apigateway/openapi.yaml"
 
