@@ -50,31 +50,10 @@ func postflight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.RulesReceived == 0 && request.RulesProcessed == 0 {
-		http.Error(w, "Request body is empty or does not contain required fields", http.StatusBadRequest)
-		return
-	}
+	log.Printf("Rules Received: %d, Rules Processed: %d", request.RulesReceived, request.RulesProcessed)
 
-	machineID := r.URL.Query().Get("machine_id")
-
-	response := Response{
-		ID:             machineID,
-		RulesReceived:  request.RulesReceived,
-		RulesProcessed: request.RulesProcessed,
-	}
-
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Failed to marshal response to JSON", http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Println(string(responseJSON))
-
-	// Set response headers and write response
-	w.Header().Set("Content-Type", "application/json")
+	// Return 200 OK with no body
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 
 // decompressZlib decompresses zlib-compressed data

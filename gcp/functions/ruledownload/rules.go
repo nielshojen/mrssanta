@@ -18,7 +18,7 @@ import (
 
 func getGlobalRules(ctx context.Context) ([]*Rule, error) {
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("scope", "==", "global")
+	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("Scope", "==", "global")
 	iter := query.Documents(ctx)
 
 	var rules []*Rule
@@ -40,9 +40,9 @@ func getGlobalRules(ctx context.Context) ([]*Rule, error) {
 	return rules, nil
 }
 
-func getMunkiRules(ctx context.Context) ([]*Rule, error) {
+func getMunkiRules(ctx context.Context, ID string) ([]*Rule, error) {
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("scope", "==", "munki").Where("assigned", "array-contains", 123123)
+	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("Scope", "==", "munki").Where("Assigned", "array-contains", ID)
 	iter := query.Documents(ctx)
 
 	var rules []*Rule
@@ -64,9 +64,9 @@ func getMunkiRules(ctx context.Context) ([]*Rule, error) {
 	return rules, nil
 }
 
-func getMachineRules(ctx context.Context) ([]*Rule, error) {
+func getMachineRules(ctx context.Context, ID string) ([]*Rule, error) {
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("scope", "==", "machine").Where("assigned", "array-contains", 123123)
+	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("Scope", "==", "machine").Where("Assigned", "array-contains", ID)
 	iter := query.Documents(ctx)
 
 	var rules []*Rule
@@ -131,6 +131,13 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract machine ID from the query parameters
+	machineID := r.URL.Query().Get("machine_id")
+	if machineID == "" {
+		http.Error(w, "Machine ID is missing in the request URL", http.StatusBadRequest)
+		return
+	}
+
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
 		http.Error(w, "Content-Type header must be application/json", http.StatusBadRequest)
@@ -165,14 +172,14 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	rules = append(rules, globalrules...)
 
-	munkirules, err := getMunkiRules(ctx)
+	munkirules, err := getMunkiRules(ctx, machineID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get munki rules: %v", err), http.StatusInternalServerError)
 		return
 	}
 	rules = append(rules, munkirules...)
 
-	machinerules, err := getMachineRules(ctx)
+	machinerules, err := getMachineRules(ctx, machineID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get machine rules: %v", err), http.StatusInternalServerError)
 		return

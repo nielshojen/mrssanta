@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func getAllDevices(ctx context.Context) ([]map[string]interface{}, error) {
@@ -40,36 +41,38 @@ func getAllDevices(ctx context.Context) ([]map[string]interface{}, error) {
 	return devices, nil
 }
 
-func getDeviceByID(ctx context.Context, machineID string) ([]*Device, error) {
+func getDeviceByID(ctx context.Context, machineID string) (*Device, error) {
+	// Reference Firestore document directly by ID
+	docRef := client.Collection(os.Getenv("DB_PREFIX") + "_devices").Doc(machineID)
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_devices").Where("name", "==", machineID)
-	iter := query.Documents(ctx)
-
-	var devices []*Device
-	for {
-		var d Device
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
+	// Get document snapshot
+	docSnap, err := docRef.Get(ctx)
+	if err != nil {
+		// Handle case where document does not exist
+		if status.Code(err) == codes.NotFound {
+			log.Printf("Device %s not found in Firestore", machineID)
+			return nil, nil // Return nil instead of an empty slice
 		}
-		if err != nil {
-			return nil, err
-		}
-		err = doc.DataTo(&d)
-		if err != nil {
-			return nil, err
-		}
-		devices = append(devices, &d)
+		log.Printf("Error fetching device %s: %v", machineID, err)
+		return nil, fmt.Errorf("failed to fetch device: %w", err)
 	}
-	return devices, nil
+
+	// Unmarshal document into Rule struct
+	var device Device
+	if err := docSnap.DataTo(&device); err != nil {
+		log.Printf("Failed to decode rule document: %v", err)
+		return nil, fmt.Errorf("failed to decode device: %w", err)
+	}
+
+	return &device, nil
 }
 
-func updateDevice(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([]*Rule, error) {
+func updateDevice(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([]*Device, error) {
 	// Define a slice to hold the rules
-	var rules []*Rule
+	var devices []*Device
 
 	// Unmarshal the JSON data into the slice
-	err := json.Unmarshal(jsonData, &rules)
+	err := json.Unmarshal(jsonData, &devices)
 	if err != nil {
 		// Log and return an error if JSON parsing fails
 		log.Printf("Failed to decode JSON: %v", err)
@@ -77,23 +80,17 @@ func updateDevice(ctx context.Context, w http.ResponseWriter, jsonData []byte) (
 	}
 
 	// Validate each rule
-	for _, rule := range rules {
-		if rule.Identifier == "" {
+	for _, device := range devices {
+		if device.Identifier == "" {
 			return nil, fmt.Errorf("rule is missing identifier")
-		}
-		if rule.Policy == "" {
-			return nil, fmt.Errorf("rule with identifier %s is missing policy", rule.Identifier)
-		}
-		if rule.RuleType == "" {
-			return nil, fmt.Errorf("rule with identifier %s is missing rule type", rule.Identifier)
 		}
 	}
 
 	// Save each rule to Firestore
-	for _, rule := range rules {
-		saveRule(ctx, client, w, rule)
+	for _, device := range devices {
+		saveDevice(ctx, client, w, device)
 	}
 
 	// Return the successfully saved rules
-	return rules, nil
+	return devices, nil
 }

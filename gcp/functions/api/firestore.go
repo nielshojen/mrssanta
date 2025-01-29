@@ -52,3 +52,42 @@ func saveRule(ctx context.Context, client *firestore.Client, w http.ResponseWrit
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func saveDevice(ctx context.Context, client *firestore.Client, w http.ResponseWriter, device *Device) {
+	rulesCollection := client.Collection(os.Getenv("DB_PREFIX") + "_devices")
+	docRef := rulesCollection.Doc(device.Identifier)
+
+	// Retrieve the existing document (if it exists)
+	docSnap, err := docRef.Get(ctx)
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			device.LastUpdated = time.Now()
+		} else {
+			// If there's another Firestore error, return
+			log.Printf("Failed to check existing device: %v", err)
+			http.Error(w, "Failed to check existing device", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// If the document exists, preserve its CreationTime
+		var existingDevice Device
+		if err := docSnap.DataTo(&existingDevice); err != nil {
+			log.Printf("Failed to decode existing device: %v", err)
+			http.Error(w, "Failed to decode existing device", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Always update LastUpdated to current time
+	device.LastUpdated = time.Now()
+
+	// Save rule to Firestore
+	_, err = docRef.Set(ctx, device)
+	if err != nil {
+		log.Printf("Failed to update collection: %v", err)
+		http.Error(w, "Failed to update collection", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
