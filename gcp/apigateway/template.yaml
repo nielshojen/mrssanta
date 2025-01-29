@@ -159,7 +159,23 @@ paths:
   /api/{endpoint}: 
     get:
       summary: "Handle api requests"
-      operationId: apiendpoint
+      operationId: apiendpointget
+      x-google-backend:
+        address: ${ API_URL }
+      parameters:
+        - name: endpoint
+          in: path
+          required: true
+          type: string
+          description: "endpoint"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+    post:
+      summary: "Handle api post requests"
+      operationId: apiendpointpost
       x-google-backend:
         address: ${ API_URL }
       parameters:
@@ -176,7 +192,7 @@ paths:
   /api/{endpoint}/{id}:
     get:
       summary: "Handle api requests"
-      operationId: apiendpointid
+      operationId: apiendpointidget
       x-google-backend:
         address: ${ API_URL }
       parameters:

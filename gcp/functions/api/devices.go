@@ -9,21 +9,20 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/api/iterator"
 )
 
-func getAllRules(ctx context.Context) ([]map[string]interface{}, error) {
+func getAllDevices(ctx context.Context) ([]map[string]interface{}, error) {
 	// Query Firestore collection
-	query := client.Collection(os.Getenv("DB_PREFIX") + "_rules")
+	query := client.Collection(os.Getenv("DB_PREFIX") + "_devices")
 	docs, err := query.Documents(ctx).GetAll()
 	if err != nil {
-		log.Printf("Failed to retrieve rules: %v", err)
-		return nil, fmt.Errorf("failed to retrieve rules: %w", err)
+		log.Printf("Failed to retrieve devices: %v", err)
+		return nil, fmt.Errorf("failed to retrieve devices: %w", err)
 	}
 
 	// Convert Firestore documents to a generic JSON-friendly format
-	var rules []map[string]interface{}
+	var devices []map[string]interface{}
 	for _, doc := range docs {
 		data := doc.Data() // Retrieve document as a map
 
@@ -35,39 +34,37 @@ func getAllRules(ctx context.Context) ([]map[string]interface{}, error) {
 			data["LastUpdated"] = lastUpdated.Format(time.RFC3339)
 		}
 
-		rules = append(rules, data)
+		devices = append(devices, data)
 	}
 
-	return rules, nil
+	return devices, nil
 }
 
-func getRuleByID(ctx context.Context, ruleID string) (*Rule, error) {
-	// Reference Firestore document directly by ID
-	docRef := client.Collection(os.Getenv("DB_PREFIX") + "_rules").Doc(ruleID)
+func getDeviceByID(ctx context.Context, machineID string) ([]*Device, error) {
 
-	// Get document snapshot
-	docSnap, err := docRef.Get(ctx)
-	if err != nil {
-		// Handle case where document does not exist
-		if status.Code(err) == codes.NotFound {
-			log.Printf("Rule %s not found in Firestore", ruleID)
-			return nil, nil // Return nil instead of an empty slice
+	query := client.Collection(os.Getenv("DB_PREFIX")+"_devices").Where("name", "==", machineID)
+	iter := query.Documents(ctx)
+
+	var devices []*Device
+	for {
+		var d Device
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
 		}
-		log.Printf("Error fetching rule %s: %v", ruleID, err)
-		return nil, fmt.Errorf("failed to fetch rule: %w", err)
+		if err != nil {
+			return nil, err
+		}
+		err = doc.DataTo(&d)
+		if err != nil {
+			return nil, err
+		}
+		devices = append(devices, &d)
 	}
-
-	// Unmarshal document into Rule struct
-	var rule Rule
-	if err := docSnap.DataTo(&rule); err != nil {
-		log.Printf("Failed to decode rule document: %v", err)
-		return nil, fmt.Errorf("failed to decode rule: %w", err)
-	}
-
-	return &rule, nil
+	return devices, nil
 }
 
-func createRules(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([]*Rule, error) {
+func updateDevice(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([]*Rule, error) {
 	// Define a slice to hold the rules
 	var rules []*Rule
 

@@ -8,6 +8,7 @@ import (
 
 // Device represents the data received in the request
 type Device struct {
+	Identifier           string    `firestore:"Identifier" json:"-"`
 	SerialNumber         string    `firestore:"SerialNumber" json:"serial_num"`
 	Hostname             string    `firestore:"Hostname" json:"hostname"`
 	OSVersion            string    `firestore:"OSVersion" json:"os_version"`
@@ -26,6 +27,7 @@ type Device struct {
 	RequestCleanSync     bool      `firestore:"RequestCleanSync,omitempty" json:"request_clean_sync,omitempty"`
 	SyncCursor           string    `firestore:"SyncCursor,omitempty" json:"sync_cursor,omitempty"`
 	SyncPage             int       `firestore:"SyncPage,omitempty" json:"sync_page,omitempty"`
+	LastCleanSync        time.Time `firestore:"LastCleanSync,omitempty" json:"last_clean_sync,omitempty"`
 	LastUpdated          time.Time `firestore:"LastUpdated,omitempty" json:"last_updated,omitempty"`
 }
 

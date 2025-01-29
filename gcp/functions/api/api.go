@@ -52,7 +52,20 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 
 	case r.Method == http.MethodGet && Endpoint == "rules" && ID != "":
 		// Handle GET /rules/{id}
-		getRuleByID(ctx, ID)
+		rules, err := getRuleByID(ctx, ID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error fetching rules: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Set response headers
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		// Serialize and write the rules as JSON
+		if err := json.NewEncoder(w).Encode(rules); err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+		}
 
 	case r.Method == http.MethodPost && Endpoint == "rules":
 		// Handle POST /rules
@@ -78,6 +91,23 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"message": "Rules saved successfully", "count": %d}`, len(rules))
+
+	case r.Method == http.MethodGet && Endpoint == "devices" && ID == "":
+		// Handle GET /rules
+		devices, err := getAllDevices(ctx)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error fetching devices: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Set response headers
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		// Serialize and write the rules as JSON
+		if err := json.NewEncoder(w).Encode(devices); err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+		}
 
 	default:
 		// Handle unsupported paths or methods

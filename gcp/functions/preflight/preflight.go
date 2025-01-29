@@ -10,25 +10,22 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	var device Device
 
-	// Extract the API key from the header
-	apiKey := r.Header.Get("X-API-Key")
-
-	// Validate the API key
-	if apiKey != validAPIKey {
+	// Validate API Key
+	if r.Header.Get("X-API-Key") != validAPIKey {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, `{"error": "Unauthorized"}`)
 		return
 	}
 
-	// Validate the Content-Type header
-	contentType := r.Header.Get("Content-Type")
-	if contentType != "application/json" {
+	// Validate Content-Type
+	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Content-Type header must be application/json", http.StatusBadRequest)
 		return
 	}
@@ -36,60 +33,92 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract machine ID from the query parameters
 	machineID := r.URL.Query().Get("machine_id")
 	if machineID == "" {
-		log.Println("Machine ID is missing in the request URL")
 		http.Error(w, "Machine ID is missing in the request URL", http.StatusBadRequest)
 		return
 	}
 
-	// Read the request body
+	// Read and decompress request body
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Cannot parse request body: %v\n", err)
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
 
-	// Decompress the data (if needed)
 	decompressedData, err := decompressZlib(reqBody)
 	if err != nil {
-		log.Printf("Failed to decompress body: %v", err)
 		http.Error(w, "Failed to decompress request body", http.StatusBadRequest)
 		return
 	}
 
-	// Unmarshal JSON into the Device struct
+	// Unmarshal JSON into Device struct
 	if err := json.Unmarshal(decompressedData, &device); err != nil {
-		log.Printf("Failed to decode JSON from decompressed data: %v", err)
 		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Save the device data (assumes saveDevice is implemented)
-	saveDevice(ctx, client, w, &device, machineID)
+	// Get existing device data from Firestore
+	existingDevice, err := getDevice(ctx, machineID)
+	if err != nil {
+		http.Error(w, "Error retrieving device", http.StatusInternalServerError)
+		return
+	}
 
-	// Prepare the response
+	// Set Identifier to machineID before saving
+	device.Identifier = machineID
+
+	// Determine if a clean sync is needed
+	needsCleanSync := existingDevice == nil || existingDevice.LastCleanSync.IsZero() || time.Since(existingDevice.LastCleanSync) > 24*time.Hour
+
+	// If the device does not exist, create a new one
+	if existingDevice == nil {
+		device.LastUpdated = time.Now()
+		device.LastCleanSync = time.Now() // Initial clean sync timestamp
+		err = saveDevice(ctx, &device, machineID)
+		if err != nil {
+			http.Error(w, "Failed to create new device", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Keep existing Firestore values where necessary
+		device.ClientMode = existingDevice.ClientMode
+		device.LastUpdated = time.Now()
+		if needsCleanSync {
+			device.LastCleanSync = time.Now()
+		} else {
+			device.LastCleanSync = existingDevice.LastCleanSync
+		}
+
+		// Save the updated device
+		err = saveDevice(ctx, &device, machineID)
+		if err != nil {
+			http.Error(w, "Failed to update device data", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Determine SyncType
+	syncType := "NORMAL"
+	if needsCleanSync {
+		syncType = "CLEAN"
+		log.Printf("Setting CLEAN sync for device %s", machineID)
+	}
+
+	// Prepare response
 	response := Response{
 		BatchSize:             100,
 		FullSyncInterval:      60,
 		ClientMode:            &device.ClientMode,
 		EnableBundles:         true,
 		EnableTransitiveRules: false,
+		SyncType:              syncType,
 	}
 
-	// Set the sync type based on the request
-	if device.RequestCleanSync {
-		response.SyncType = "clean_all"
-	} else {
-		response.SyncType = "normal"
-	}
-
-	// Write the response
+	// Send JSON response
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("Failed to encode response to JSON: %v", err)
-		http.Error(w, "Failed to encode response to JSON", http.StatusInternalServerError)
-		return
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
