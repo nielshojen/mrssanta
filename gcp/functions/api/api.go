@@ -109,6 +109,23 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 		}
 
+	case r.Method == http.MethodGet && Endpoint == "events" && ID == "":
+		// Handle GET /rules
+		events, err := getAllEvents(ctx)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error fetching events: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Set response headers
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		// Serialize and write the rules as JSON
+		if err := json.NewEncoder(w).Encode(events); err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+		}
+
 	default:
 		// Handle unsupported paths or methods
 		http.Error(w, "Not Found", http.StatusNotFound)

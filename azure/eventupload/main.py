@@ -56,7 +56,7 @@ def save_event(data):
     file_sha256 = data['file_sha256']
 
     # Define Firestore document path
-    doc_ref = db.collection('%s_binaries' % os.environ.get('DB_PREFIX')).document(file_sha256)
+    doc_ref = db.collection('%s_events' % os.environ.get('DB_PREFIX')).document(file_sha256)
 
     # Add Timestamp
     data['last_updated'] = firestore.SERVER_TIMESTAMP

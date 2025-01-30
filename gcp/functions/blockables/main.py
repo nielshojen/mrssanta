@@ -56,7 +56,7 @@ def get_device(identifier):
 def get_binary(identifier):
 
     # Reference to the binary document
-    binary_ref = db.collection('%s_binaries' % os.environ.get('DB_PREFIX')).document(identifier)
+    binary_ref = db.collection('%s_events' % os.environ.get('DB_PREFIX')).document(identifier)
 
     # Get the binary document
     binary = binary_ref.get()
@@ -75,7 +75,7 @@ def get_binary(identifier):
 def save_binary(identifier, data):
 
     # Define Firestore document path
-    doc_ref = db.collection('%s_binaries' % os.environ.get('DB_PREFIX')).document(identifier)
+    doc_ref = db.collection('%s_events' % os.environ.get('DB_PREFIX')).document(identifier)
 
     # Add Timestamp
     data['last_updated'] = firestore.SERVER_TIMESTAMP
@@ -120,24 +120,30 @@ def blockables(request):
                 if 'SigningChain' in binary and binary['SigningChain']:
                     signing_chain = binary['SigningChain']
                     binary['SignedBy'] = signing_chain[0]['Org']
-                if 'SigningID' in binary and binary['SigningID']:
+                if 'TeamID' in binary and binary['TeamID']:
+                    rule = get_rule(binary['TeamID'])
+                    if rule:
+                        response['scope'] = rule['Scope']
+                        response['policy'] = rule['Policy']
+                        response['custom_msg'] = rule['CustomMessage']
+                elif 'SigningID' in binary and binary['SigningID']:
                     rule = get_rule(binary['SigningID'])
                     if rule:
-                        response['scope'] = rule['scope']
-                        response['policy'] = rule['policy']
-                        response['custom_msg'] = rule['custom_msg']
+                        response['scope'] = rule['Scope']
+                        response['policy'] = rule['Policy']
+                        response['custom_msg'] = rule['CustomMessage']
                 elif 'FileSha256' in binary and binary['FileSha256']:
                     rule = get_rule(binary['FileSha256'])
                     if rule:
-                        response['scope'] = rule['scope']
-                        response['policy'] = rule['policy']
-                        response['custom_msg'] = rule['custom_msg']
+                        response['scope'] = rule['Scope']
+                        response['policy'] = rule['Policy']
+                        response['custom_msg'] = rule['CustomMessage']
                 elif 'CDHash' in binary and binary['CDHash']:
                     rule = get_rule(binary['CDHash'])
                     if rule:
-                        response['scope'] = rule['scope']
-                        response['policy'] = rule['policy']
-                        response['custom_msg'] = rule['custom_msg']
+                        response['scope'] = rule['Scope']
+                        response['policy'] = rule['Policy']
+                        response['custom_msg'] = rule['CustomMessage']
             else:
                 response['file_sha256'] = file_identifier
             

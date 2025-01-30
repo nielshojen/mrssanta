@@ -68,10 +68,16 @@
 
       <div class="col-lg-12">
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold">Verify that intended to run this Application?</h6>
+        <div class="card border-dark shadow mb-4">
+            {% if response.VirusTotalResult == 2 %}
+            <div class="card-header py-3 text-bg-danger">
+              <h6 class="m-0 font-weight-bold">Verify that intended to run this Application?</h6>
             </div>
+            {% else %}
+            <div class="card-header py-3 text-bg-success">
+              <h6 class="m-0 font-weight-bold">Verify that intended to run this Application?</h6>
+            </div>
+            {% endif %}
             <div class="card-body">
               {% if response.FileBundleName %}
               <p class="card-text">File Bundle Name: {{ response.FileBundleName }}</p>
@@ -88,9 +94,9 @@
               {% if response.VirusTotalResult == 0 %}
               <p class="card-text">VirusTotal Scan Result: No Scan Available</p>
               {% elif response.VirusTotalResult == 1 %}
-              <p class="card-text">VirusTotal Scan Result: <b class="text-success">Safe</b></p>
+              <p class="card-text">VirusTotal Scan Result: <b class="text-success">Safe</b> <button class="btn btn-success btn-sm" onclick=" window.open('https://www.virustotal.com/gui/file/{{ response.FileSha256 }}','_blank')">Details</button></p>
               {% elif response.VirusTotalResult == 2 %}
-              <p class="card-text">VirusTotal Scan Result: <b class="text-success">Malicious</b></p>
+              <p class="card-text">VirusTotal Scan Result: <b class="text-danger">Malicious</b> <button class="btn btn-danger btn-sm" onclick=" window.open('https://www.virustotal.com/gui/file/{{ response.FileSha256 }}','_blank')">Details</button></p>
               {% endif %}
             </div>
         </div>
@@ -105,8 +111,8 @@
       {% if response.policy == 'BLOCKLIST' %}
       <div class="col-lg-12">
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
+        <div class="card border-dark shadow mb-4">
+            <div class="card-header py-3 text-bg-danger">
                 <h6 class="m-0 font-weight-bold">Rule</h6>
             </div>
             <div class="card-body">
@@ -125,8 +131,8 @@
       {% if response.policy == 'ALLOWLIST' %}
       <div class="col-lg-12">
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
+        <div class="card border-dark shadow mb-4">
+            <div class="card-header py-3 text-bg-danger">
                 <h6 class="m-0 font-weight-bold">Rule</h6>
             </div>
             <div class="card-body">
@@ -145,8 +151,8 @@
       {% if response.policy == 'ALLOWLIST' %}
       <div class="col-lg-12">
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
+        <div class="card border-dark shadow mb-4">
+            <div class="card-header py-3 text-bg-success">
                 <h6 class="m-0 font-weight-bold">Add Rule?</h6>
             </div>
             <div class="card-body">
@@ -154,9 +160,9 @@
               <p class="card-text">{{ response.FileName }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
               {% else %}
               <p class="card-text">Do you want to allow <b>{{ response.FileName }}</b> to run on your Mac({{ response.Hostname.split(".")[0] }})?</p>
-              <button type="button" class="btn btn-outline-success" type="submit" value="allow" id="allow">Allow</button>
-              <button type="button" class="btn btn-outline-danger" type="submit" value="report" id="report">Report as Malware</button>
-              <button type="button" class="btn btn-outline-secondary" type="submit" value="close" id="close">Close</button>
+              <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow">Allow</button>
+              <button type="button" class="btn btn-outline-danger btn-sm" type="submit" value="report" id="report">Report as Malware</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" type="submit" value="close" id="close">Close</button>
               {% endif %}
             </div>
         </div>
@@ -167,8 +173,8 @@
       {% else%}
       <div class="col-lg-12">
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
+        <div class="card border-dark shadow mb-4">
+            <div class="card-header py-3 text-bg-success">
                 <h6 class="m-0 font-weight-bold">Add Rule?</h6>
             </div>
             <div class="card-body">
