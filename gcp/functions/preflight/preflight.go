@@ -17,8 +17,11 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	var device Device
 
-	// Validate API Key
-	if r.Header.Get("X-API-Key") != validAPIKey {
+	// Extract the API key from the header
+	apiKey := r.Header.Get("X-API-Key")
+
+	// Validate the API key
+	if apiKey != validAPIKey {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, `{"error": "Unauthorized"}`)
 		return

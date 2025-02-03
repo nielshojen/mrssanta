@@ -44,6 +44,16 @@ variable "service_version" {
   default = "0.1"
 }
 
+variable "client_id" {
+  type        = string
+  description = "MSAL Client ID"
+}
+
+variable "tenant_id" {
+  type        = string
+  description = "MSAL Tenant ID"
+}
+
 variable "virustotal_api_key" {
   type        = string
   description = "VirusTotal API Key"
