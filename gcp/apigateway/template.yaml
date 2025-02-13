@@ -145,6 +145,60 @@ paths:
           description: "Successful response"
           schema:
             $ref: '#/definitions/AnyValue'
+  /santa/blockables/rule:
+    post:
+      summary: "Handle rule requests"
+      operationId: rules
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      x-google-backend:
+        address: ${ BLOCKABLES_URL }
+      parameters:
+        - in: "body"
+          name: "allowRequest"
+          description: "Details of the application to be allowed"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - action
+              - scope
+              - filehash
+              - identifier
+            properties:
+              action:
+                type: "string"
+              scope:
+                type: "string"
+              filehash:
+                type: "string"
+              identifier:
+                type: "string"
+              ruletype:
+                type: "string"
+              ruleid:
+                type: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
+  /static/{filename}:
+    get:
+      summary: "Serve static files"
+      operationId: static
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Static file retrieved successfully"
+      x-google-backend:
+        address: ${ BLOCKABLES_URL }
   /api:
     get:
       summary: "Handle api requests"
@@ -466,3 +520,10 @@ securityDefinitions:
     type: apiKey
     name: X-API-Key
     in: header
+  azure_auth:
+    type: "oauth2"
+    flow: "implicit"
+    authorizationUrl: "https://login.microsoftonline.com/${ OAUTH_TENANT }/oauth2/v2.0/authorize"
+    x-google-issuer: "https://sts.windows.net/${ OAUTH_TENANT }/"
+    x-google-jwks_uri: "https://login.microsoftonline.com/${ OAUTH_TENANT }/discovery/v2.0/keys"
+    x-google-audiences: "${ OAUTH_CLIENT_ID }"

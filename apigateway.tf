@@ -7,11 +7,23 @@ resource "local_file" "api_gateway_config" {
     XSRF_URL = google_cloudfunctions2_function.xsrf.url
     BLOCKABLES_URL = google_cloudfunctions2_function.blockables.url
     API_URL =  google_cloudfunctions2_function.api.url
+    OAUTH_TENANT = var.oauth_tenant
+    OAUTH_CLIENT_ID = var.oauth_client_id
   })
   filename = "${path.module}/gcp/apigateway/openapi.yaml"
 
   depends_on = [google_cloudfunctions2_function.preflight]
 }
+
+# resource "google_apikeys_key" "client" {
+#   name         = "key"
+#   display_name = "${var.service}-client-key"
+# }
+
+# resource "google_apikeys_key" "management" {
+#   name         = "key"
+#   display_name = "${var.service}-management-key"
+# }
 
 resource "google_api_gateway_api" "api_gw" {
   provider     = google-beta

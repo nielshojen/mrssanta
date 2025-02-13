@@ -16,7 +16,7 @@ resource "google_cloudfunctions2_function" "xsrf" {
   description = var.service
 
   build_config {
-    runtime = "go121"
+    runtime = "go122"
     entry_point = "xsrf"
     source {
       storage_source {

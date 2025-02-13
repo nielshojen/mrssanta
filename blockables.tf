@@ -31,6 +31,7 @@ resource "google_cloudfunctions2_function" "blockables" {
     available_memory    = "256M"
     timeout_seconds     = 60
     environment_variables = {
+      VOTE_THRESHOLD = "5"
       LOG_EXECUTION_ID = "true"
       GCP_PROJECT = var.project_id
       FIRESTORE_DATABASE = google_firestore_database.database.name

@@ -38,20 +38,20 @@ variable "team" {
   description = "The application owner team"
 }
 
+variable "oauth_tenant" {
+  type        = string
+  description = "The OAuth Tenant"
+}
+
+variable "oauth_client_id" {
+  type        = string
+  description = "The OAuth Client ID"
+}
+
 variable "service_version" {
   type        = string
   description = "Service version"
   default = "0.1"
-}
-
-variable "client_id" {
-  type        = string
-  description = "MSAL Client ID"
-}
-
-variable "tenant_id" {
-  type        = string
-  description = "MSAL Tenant ID"
 }
 
 variable "virustotal_api_key" {

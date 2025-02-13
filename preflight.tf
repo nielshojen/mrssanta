@@ -16,7 +16,7 @@ resource "google_cloudfunctions2_function" "preflight" {
   description = var.service
 
   build_config {
-    runtime = "go121"
+    runtime = "go122"
     entry_point = "preflight"
     source {
       storage_source {
