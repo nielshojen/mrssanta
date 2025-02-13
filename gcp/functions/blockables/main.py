@@ -1,5 +1,5 @@
 import functions_framework
-from flask import render_template, jsonify
+from flask import render_template, jsonify, send_from_directory
 import os
 import json
 import requests
@@ -11,6 +11,8 @@ vote_threshold = os.environ.get('VOTE_THRESHOLD')
 
 # Initialize Firestore client with a specific database ID
 db = firestore.Client(database=os.environ.get('FIRESTORE_DATABASE'))
+
+STATIC_FOLDER = os.path.join(os.getcwd(), "static")
 
 def get_vt_result(file_hash):
     check_failed = 0
@@ -114,7 +116,18 @@ def save_rule(identifier, data):
 
 @functions_framework.http
 def blockables(request):
+
     request_args = request.args
+
+    path = request.path.strip("/")
+
+    if path.startswith("static/"):
+        filename = path[len("static/"):]
+        return send_from_directory(STATIC_FOLDER, filename)
+
+    if path.startswith("favico.ico"):
+        filename = "favico.ico"
+        return send_from_directory(STATIC_FOLDER, filename)
 
     if request.method == "POST":
     
@@ -129,8 +142,6 @@ def blockables(request):
             binary = get_binary(data['filehash'])
         else:
             return jsonify({"success": False, "message": "No binary data available"}), 400
-
-        print(data)
 
         if data['action'] == "new":
             identifier = data['identifier']
@@ -259,6 +270,8 @@ def blockables(request):
             device = get_device(machine_id)
             if device:
                 response['device'] = device
+            else:
+                return render_template('error.html')
 
         if request_args and "file_identifier" in request_args:
             file_identifier = request_args.getlist('file_identifier')[0]
@@ -307,6 +320,8 @@ def blockables(request):
                         rule['RuleType'] = 'BINARY'
                     
                     response['rule'] = rule
+            else:
+                return render_template('error.html')
 
         print('response: %s' % response)
 

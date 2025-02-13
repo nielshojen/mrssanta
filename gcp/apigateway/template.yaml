@@ -123,6 +123,35 @@ paths:
           description: "Successful response"
           schema:
             $ref: '#/definitions/AnyValue'
+  /favicon.ico:
+    get:
+      summary: "Serve favicon.ico from Cloud Storage"
+      operationId: favico
+      produces:
+        - image/x-icon
+      x-google-backend:
+        address: "${ BLOCKABLES_URL }/favicon.ico"
+      responses:
+        200:
+          description: "Favicon response"
+        404:
+          description: "Not found"
+  /static/{filename}:
+    get:
+      summary: "Serve static files"
+      operationId: static
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: "Static file retrieved successfully"
+        404:
+          description: "Not found"
+      x-google-backend:
+        address: ${ BLOCKABLES_URL }/static/{filename}
   /santa/blockables/{machine_id}/{file_identifier}:
     get:
       summary: "Handle blockables requests"
@@ -185,20 +214,6 @@ paths:
           description: "Successful response"
           schema:
             $ref: '#/definitions/AnyValue'
-  /static/{filename}:
-    get:
-      summary: "Serve static files"
-      operationId: static
-      parameters:
-        - name: filename
-          in: path
-          required: true
-          type: string
-      responses:
-        200:
-          description: "Static file retrieved successfully"
-      x-google-backend:
-        address: ${ BLOCKABLES_URL }
   /api:
     get:
       summary: "Handle api requests"
