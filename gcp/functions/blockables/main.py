@@ -1,8 +1,8 @@
 import functions_framework
 from flask import render_template, jsonify, send_from_directory
 import os
-import json
 import requests
+from urllib.parse import unquote
 
 from google.cloud import firestore
 
@@ -118,16 +118,6 @@ def save_rule(identifier, data):
 def blockables(request):
 
     request_args = request.args
-
-    path = request.path.strip("/")
-
-    if path.startswith("static/"):
-        filename = path[len("static/"):]
-        return send_from_directory(STATIC_FOLDER, filename)
-
-    if path.startswith("favico.ico"):
-        filename = "favico.ico"
-        return send_from_directory(STATIC_FOLDER, filename)
 
     if request.method == "POST":
     
@@ -258,6 +248,18 @@ def blockables(request):
 
 
     if request.method == "GET":
+
+        path = request.path.strip("/")
+
+        path = unquote(path)
+
+        if path.startswith("static/"):
+            filename = path[len("static/"):]
+            return send_from_directory(STATIC_FOLDER, filename)
+
+        if path.startswith("favico.ico"):
+            filename = "favico.ico"
+            return send_from_directory(STATIC_FOLDER, filename)
     
         response = {}
 
