@@ -14,14 +14,27 @@ import (
 )
 
 func sanitizeEvent(event Event) Event {
-	sanitized := event // Initialize sanitized struct with all fields from the original event
+	sanitized := event
 	eventType := reflect.TypeOf(event)
 	eventValue := reflect.ValueOf(&sanitized).Elem()
 
 	for _, fieldName := range []string{
-		"ExecutingUser", "ExecutionTime", "LoggedinUsers", "CurrentSessions", "Decision",
-		"FileBundlePath", "FileBundleHashBillis", "PID", "PPID", "ParentName",
-		"QuarantineTimestamp", "QuarantineAgentBundleID", "Labels",
+		"EntitlementInfo",
+		"ExecutingUser",
+		"ExecutionTime",
+		"LoggedinUsers",
+		"CurrentSessions",
+		"Decision",
+		"FileBundlePath",
+		"FileBundleHashBillis",
+		"ParentName",
+		"PID",
+		"PPID",
+		"QuarantineTimestamp",
+		"QuarantineAgentBundleID",
+		"SigningChain",
+		"SigningStatus",
+		"Labels",
 	} {
 		field, found := eventType.FieldByName(fieldName)
 		if found {

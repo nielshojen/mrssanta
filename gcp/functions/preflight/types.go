@@ -15,7 +15,7 @@ type Device struct {
 	OSBuild              string    `firestore:"OSBuild" json:"os_build"`
 	ModelIdentifier      string    `firestore:"ModelIdentifier,omitempty" json:"model_identifier,omitempty"`
 	SantaVersion         string    `firestore:"SantaVersion" json:"santa_version"`
-	PrimaryUser          string    `firestore:"PrimaryUser,omitempty" json:"primary_user,omitempty"`
+	PrimaryUser          string    `firestore:"PrimaryUser" json:"primary_user"`
 	BinaryRuleCount      int       `firestore:"BinaryRuleCount,omitempty" json:"binary_rule_count,omitempty"`
 	CertificateRuleCount int       `firestore:"CertificateRuleCount,omitempty" json:"certificate_rule_count,omitempty"`
 	CompilerRuleCount    int       `firestore:"CompilerRuleCount,omitempty" json:"compiler_rule_count,omitempty"`
