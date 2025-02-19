@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Events{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+
+        <h1 class="text-center fw-bold mb-4">Rules</h1>
+
+        <div class="row">
+            <div class="table-responsive">
+            <table class="table table-bordere mb-4" id="dataTable" cellspacing="0">
+                <thead>
+                    <tr>
+                    {% if data %}
+                        <th>Hostname</th>
+                        <th>CustomMessage</th>
+                        <th>RuleType</th>
+                        <th>Policy</th>
+                        <th>Scope</th>
+                        <th>Assigned</th>
+                    {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data %}
+                    <tr>
+                        {% if 'Identifier' in item %}
+                            <td>{{ item.Identifier }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                        {% if 'CustomMessage' in item %}
+                            <td>{{ item.CustomMessage }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                        {% if 'RuleType' in item %}
+                            <td>{{ item.RuleType }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                        {% if 'Policy' in item %}
+                            <td>{{ item.Policy }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                        {% if 'Scope' in item %}
+                            <td>{{ item.Scope }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                        {% if 'Assigned' in item %}
+                            <td>{{ item.Assigned|length }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+{% endblock %}
+
+{% block content_scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#dataTable').DataTable({
+                "paging": true,                     // Enables pagination
+                "searching": true,                  // Enables search box
+                "ordering": true,                   // Enables sorting
+                "info": true,                       // Shows "Showing X of Y entries"
+                "lengthMenu": [5, 10, 25, 50, 100], // Controls page length options
+                "pageLength": 50                    // Default rows per page
+            });
+        });
+    </script>
+{% endblock %}

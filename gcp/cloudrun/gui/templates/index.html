@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+    <h1 class="text-center fw-bold mb-4">Santa Dashboard</h1>
+
+    <div class="row mb-4">
+        {% for name, count in counts.items() %}
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header text-uppercase fw-bold" style="background-color: #FF0000; color: white;">{{ name }}</div>
+                <div class="card-body text-center">
+                    <h3 class="card-title display-4">{{ count }}</h3>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

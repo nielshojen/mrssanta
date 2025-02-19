@@ -19,21 +19,12 @@ func sanitizeEvent(event Event) Event {
 	eventValue := reflect.ValueOf(&sanitized).Elem()
 
 	for _, fieldName := range []string{
-		"EntitlementInfo",
 		"ExecutingUser",
 		"ExecutionTime",
 		"LoggedinUsers",
 		"CurrentSessions",
-		"Decision",
-		"FileBundlePath",
-		"FileBundleHashBillis",
-		"ParentName",
 		"PID",
 		"PPID",
-		"QuarantineTimestamp",
-		"QuarantineAgentBundleID",
-		"SigningChain",
-		"SigningStatus",
 		"Labels",
 	} {
 		field, found := eventType.FieldByName(fieldName)
