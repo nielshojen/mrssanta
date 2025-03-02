@@ -4,76 +4,179 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
+    <h1 class="text-center fw-bold mb-4">Events</h1>
 
-        <h1 class="text-center fw-bold mb-4">Events</h1>
+    <div class="row">
+        <div class="col-md-3">
+            <label for="fileNameSearch">Search by FileName:</label>
+            <input type="text" id="fileNameSearch" class="form-control" placeholder="Enter FileName">
+        </div>
 
-        <div class="row">
-            <div class="table-responsive">
-            <table class="table table-bordere mb-4" id="dataTable" cellspacing="0">
+        <div class="col-md-3">
+            <label for="decisionFilter">Filter by Decision:</label>
+            <select id="decisionFilter" class="form-select mb-3">
+                <option value="">All Decisions</option>
+                <option value="ALLOW_BINARY">ALLOW_BINARY</option>
+                <option value="ALLOW_CERTIFICATE">ALLOW_CERTIFICATE</option>
+                <option value="ALLOW_SCOPE">ALLOW_SCOPE</option>
+                <option value="ALLOW_TEAMID">ALLOW_TEAMID</option>
+                <option value="ALLOW_SIGNINGID">ALLOW_SIGNINGID</option>
+                <option value="ALLOW_CDHASH">ALLOW_CDHASH</option>
+                <option value="ALLOW_UNKNOWN">ALLOW_UNKNOWN</option>
+                <option value="BLOCK_BINARY">BLOCK_BINARY</option>
+                <option value="BLOCK_CERTIFICATE">BLOCK_CERTIFICATE</option>
+                <option value="BLOCK_SCOPE">BLOCK_SCOPE</option>
+                <option value="BLOCK_TEAMID">BLOCK_TEAMID</option>
+                <option value="BLOCK_SIGNINGID">BLOCK_SIGNINGID</option>
+                <option value="BLOCK_CDHASH">BLOCK_CDHASH</option>
+                <option value="BLOCK_UNKNOWN">BLOCK_UNKNOWN</option>
+                <option value="BUNDLE_BINARY">BUNDLE_BINARY</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="fileSha256Search">Search by FileSha256:</label>
+            <input type="text" id="fileSha256Search" class="form-control" placeholder="Enter FileSha256">
+        </div>
+
+        <div class="col-md-3">
+            <label for="virusTotalFilter">Filter by VirusTotal Result:</label>
+            <select id="virusTotalFilter" class="form-select">
+                <option value="">All Results</option>
+                <option value="2">Malicious</option>
+                <option value="1">Safe</option>
+                <option value="0">No Scan Available</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-4" id="dataTable">
                 <thead>
                     <tr>
-                        {% if data %}
                         <th>FileName</th>
                         <th>Decision</th>
                         <th>FileSha256</th>
-                        <th>SigningStatus</th>
                         <th>VirusTotalResult</th>
-                        {% endif %}
+                        <th>Details</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for item in data %}
-                    <tr>
-                        {% if 'FileName' in item %}
-                            <td>{{ item.FileName }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'Decision' in item %}
-                            <td>{{ item.Decision }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'FileSha256' in item %}
-                            <td>{{ item.FileSha256 }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'SigningStatus' in item %}
-                            <td>{{ item.SigningStatus }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'VirusTotalResult' in item %}
-                            <td>{{ item.VirusTotalResult }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
+                <tbody id="event-body">
+                    <!-- Initial data will be loaded here via JavaScript -->
                 </tbody>
             </table>
-            </div>
         </div>
+    </div>
 
+    <div id="loading">Loading more events...</div>
 {% endblock %}
 
 {% block content_scripts %}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        $(document).ready(function () {
-            $('#dataTable').DataTable({
-                "paging": true,                     // Enables pagination
-                "searching": true,                  // Enables search box
-                "ordering": true,                   // Enables sorting
-                "info": true,                       // Shows "Showing X of Y entries"
-                "lengthMenu": [5, 10, 25, 50, 100], // Controls page length options
-                "pageLength": 50                    // Default rows per page
+        let nextCursor = null;
+        let loading = false;
+        let selectedDecision = "";  // Store selected Decision filter
+        let selectedVirusTotal = "";  // Store selected VirusTotalResult filter
+        let fileSha256Query = "";  // Store FileSha256 search query
+        let fileNameQuery = "";  // Store FileName search query
+    
+        function loadEvents(reset = false) {
+            if (loading || nextCursor === false) return;
+            loading = true;
+            $("#loading").show();
+    
+            // If reset, clear previous data
+            if (reset) {
+                $("#event-body").empty();
+                nextCursor = null;
+            }
+    
+            let apiURL = `/load_events?cursor=${nextCursor || ""}&decision=${selectedDecision}&virustotal=${selectedVirusTotal}&fileSha256=${fileSha256Query}&fileName=${fileNameQuery}`;
+            console.log("Fetching from:", apiURL);  // Debugging
+    
+            $.get(apiURL, function(response) {
+                console.log("Response received:", response);  // Debugging
+    
+                if (response.data.length > 0) {
+                    response.data.forEach(event => {
+                        let vtResult = "No Scan Available";
+                        if (event.VirusTotalResult == 2) {
+                            vtResult = "<b class='text-danger'>Malicious</b>";
+                        } else if (event.VirusTotalResult == 1) {
+                            vtResult = "<b class='text-success'>Safe</b>";
+                        }
+    
+                        let row = `
+                            <tr>
+                                <td>${event.FileName ? event.FileName : ""}</td>
+                                <td>${event.Decision ? event.Decision : ""}</td>
+                                <td>${event.FileSha256 ? event.FileSha256 : ""}</td>
+                                <td>${vtResult}</td>
+                                <td>
+                                    ${event.FileSha256 
+                                        ? `<a href="/events/${event.FileSha256}" class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover">Open</a>`
+                                        : ""}
+                                </td>
+                            </tr>
+                        `;
+                        $("#event-body").append(row);
+                    });
+    
+                    nextCursor = response.next_cursor;  // Update cursor
+                    console.log("Next cursor set to:", nextCursor);
+                } else {
+                    nextCursor = false; // No more data
+                    console.log("No more events to load.");
+                }
+    
+                $("#loading").hide();
+                loading = false;
+            });
+        }
+    
+        $(document).ready(function() {
+            console.log("JavaScript initialized.");  // Debugging
+            loadEvents();  // Load first batch
+    
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadEvents();
+                }
+            });
+    
+            // Handle filter changes
+            $("#decisionFilter, #virusTotalFilter").change(function() {
+                selectedDecision = $("#decisionFilter").val();
+                selectedVirusTotal = $("#virusTotalFilter").val();
+                console.log("Filters changed to: Decision =", selectedDecision, ", VirusTotal =", selectedVirusTotal);
+                loadEvents(true);  // Reset and apply new filters
+            });
+    
+            // Handle FileName search
+            $("#fileNameSearch").on("input", function() {
+                fileNameQuery = $(this).val().trim();
+                console.log("FileName search updated to:", fileNameQuery);
+                loadEvents(true);  // Reset and apply new search
+            });
+    
+            // Handle FileSha256 search
+            $("#fileSha256Search").on("input", function() {
+                fileSha256Query = $(this).val().trim();
+                console.log("FileSha256 search updated to:", fileSha256Query);
+                loadEvents(true);  // Reset and apply new search
             });
         });
     </script>

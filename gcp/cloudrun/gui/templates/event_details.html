@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}Events{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+
+        <h1 class="text-center fw-bold mb-4">Event Details <button class="btn btn-santa btn-sm" onclick="deleteEvent('{{ data.FileSha256 }}')">Delete Event</button></h1>
+
+        
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="row">
+                    <!-- Action Card -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header text-uppercase fw-bold card-header-santa">Action</div>
+                            <div class="card-body">
+                                {% if data.Decision == "ALLOW_BINARY" %}
+                                <p class="card-text text-success fw-bold">Allowed to run based on Binary rule</p>
+                                {% elif data.Decision == "ALLOW_CERTIFICATE" %}
+                                <p class="card-text text-success fw-bold">Allowed to run based on Certificate rule</p>
+                                {% elif data.Decision == "ALLOW_SCOPE" %}
+                                <p class="card-text text-success fw-bold">Allowed to run based on Configured Scope</p>
+                                {% elif data.Decision == "ALLOW_TEAMID" %}
+                                <p class="card-text text-success fw-bold">Allowed to run based on Team ID rule</p>
+                                {% elif data.Decision == "ALLOW_SIGNINGID" %}
+                                <p class="card-text text-success fw-bold">Allowed to run based on Signing ID rule</p>
+                                {% elif data.Decision == "ALLOW_CDHASH" %}
+                                <p class="card-text text-success fw-bold">Allowed to run based on CD Hash rule</p>
+                                {% elif data.Decision == "ALLOW_UNKNOWN" %}
+                                <p class="card-text text-success fw-bold">Allowed to run because no rules blocks or allows it</p>
+                                {% elif data.Decision == "BLOCK_BINARY" %}
+                                <p class="card-text text-santa fw-bold">Blocked based on Binary rule</p>
+                                {% elif data.Decision == "BLOCK_CERTIFICATE" %}
+                                <p class="card-text text-santa fw-bold">Blocked based on Certificate rule</p>
+                                {% elif data.Decision == "BLOCK_SCOPE" %}
+                                <p class="card-text text-santa fw-bold">Blocked based on Scope rule</p>
+                                {% elif data.Decision == "BLOCK_TEAMID" %}
+                                <p class="card-text text-santa fw-bold">Blocked based on Team ID rule</p>
+                                {% elif data.Decision == "BLOCK_SIGNINGID" %}
+                                <p class="card-text text-santa fw-bold">Blocked based on Signing ID rule</p>
+                                {% elif data.Decision == "BLOCK_CDHASH" %}
+                                <p class="card-text text-santa fw-bold">Blocked based on CD Hash rule</p>
+                                {% elif data.Decision == "BLOCK_UNKNOWN" %}
+                                <p class="card-text text-santa fw-bold">Blocked based as no rule allows it</p>
+                                {% elif data.Decision == "BUNDLE_BINARY" %}
+                                <p class="card-text">Preemptively reported binary</p>
+                                {% else %}
+                                <p class="card-text">No action taken</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+        
+                    <!-- Virus Total Card -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header text-uppercase fw-bold card-header-santa">Virus Total</div>
+                            <div class="card-body">
+                                {% if data.VirusTotalResult == 2 %}
+                                <p class="card-text">
+                                    <b class="text-danger">Malicious</b>
+                                    <button class="btn btn-success btn-sm" id="virusTotalButton">
+                                        Details
+                                    </button>
+                                </p>
+                                {% elif data.VirusTotalResult == 1 %}
+                                <p class="card-text">
+                                    <b class="text-success">Safe</b>
+                                    <button class="btn btn-success btn-sm" id="virusTotalButton">
+                                        Details
+                                    </button>
+                                </p>
+                                {% elif data.VirusTotalResult == 0 %}
+                                <p class="card-text">No Scan Available</p>
+                                {% else %}
+                                <p class="card-text">
+                                    No Scan Performed
+                                    <button class="btn btn-success btn-sm" id="virusTotalButton">
+                                        Check on Virus Total
+                                    </button>
+                                </p>                              
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Binary Details Card -->
+                <div class="card mb-3">
+                    <div class="card-header text-uppercase fw-bold card-header-santa">Binary Details</div>
+                    <div class="card-body text-break">
+                        <ol class="list-group">
+                            {% if data.FilePath %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Binary Path</div>
+                                    <small class="d-block">{{ data.FilePath }}/{{ data.FileName }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileSha256 %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">SHA-256</div>
+                                    <small class="d-block">{{ data.FileSha256 }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ol>
+                        <br>
+                        <ol class="list-group">
+                            {% if data.FileBundleName %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Bundle Name</div>
+                                    <small class="d-block">{{ data.FileBundleName }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleVersion %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Bundle Version</div>
+                                    <small class="d-block">{{ data.FileBundleVersion }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleVersionString %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Bundle Version String</div>
+                                    <small class="d-block">{{ data.FileBundleVersionString }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleID %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Bundle ID</div>
+                                    <small class="d-block">{{ data.FileBundleID }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundlePath %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Bundle Path</div>
+                                    <small class="d-block">{{ data.FileBundlePath }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleExecutableRelPath %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Bundle Executable Relative Path</div>
+                                    <small class="d-block">{{ data.FileBundleExecutableRelPath }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.ParentName %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Parent Process</div>
+                                    <small class="d-block">{{ data.ParentName }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleHash %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">File Bundle Hash</div>
+                                    <small class="d-block">{{ data.FileBundleHash }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleHashMillis %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">File Bundle Hash Millis</div>
+                                    <small class="d-block">{{ data.FileBundleHashMillis }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.FileBundleBinaryCount %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">File Bundle Binary Count</div>
+                                    <small class="d-block">{{ data.FileBundleBinaryCount }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ol>
+                        <br>
+                        <ol class="list-group">
+                            {% if data.SigningID %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Signing ID</div>
+                                    <small class="d-block">{{ data.SigningID }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.TeamID %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">Team ID</div>
+                                    <small class="d-block">{{ data.TeamID }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                            {% if data.CDHash %}
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">CD Hash</div>
+                                    <small class="d-block">{{ data.CDHash }}</small>
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="col-md-6">
+                <!-- Signing Chain Card -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card mb-3">
+                            <div class="card-header text-uppercase fw-bold card-header-santa">Signing Chain</div>
+                            <div class="card-body text-break">
+                                {% if data.SignedBy %}
+                                <p class="card-text">Signed By: {{ data.SignedBy }}</p>
+                                {% endif %}
+                                {% if data.SigningStatus %}
+                                <p class="card-text">SigningStatus: {{ data.SigningStatus }}</p>
+                                {% endif %}
+                                {% if data.SigningChain %}
+                                <ol class="list-group list-group-numbered">
+                                {% for i in data.SigningChain %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <div class="ms-2 me-auto">
+                                            <div class="fw-bold">{{ i.CN }}</div>
+                                            <small class="d-block">SHA-256: {{ i.Sha256 }}</small>
+                                            <small class="d-block">Organization: {{ i.Org }}</small>
+                                            <small class="d-block">Organizational Unit: {{ i.OU }}</small>
+                                            <small class="d-block">Valid From: {{ i.ValidFrom }}</small>
+                                            <small class="d-block">Valid Until: {{ i.ValidUntil }}</small>
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                                </ol>
+                                {% endif %}
+                                {% if data.CSFlags %}
+                                <p class="card-text">CSFlags: {{ data.CSFlags }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+{% endblock %}
+
+{% block content_scripts %}
+    <script>
+        document.getElementById("virusTotalButton").addEventListener("click", function() {
+            let url = "https://www.virustotal.com/gui/file/{{ data.FileSha256 }}";
+            window.open(url, "_blank");
+        });
+    </script>
+    <script>
+        function deleteEvent(FileSha256) {
+            if (confirm("Are you sure you want to delete this event?")) {
+                fetch(`/events/${FileSha256}/delete`, {
+                    method: "DELETE"
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Document deleted successfully!");
+                        window.location.href = "/events";  // Redirect after deletion
+                    } else {
+                        response.json().then(data => alert(data.message || "Error deleting document"));
+                    }
+                })
+                .catch(error => alert("Error: " + error));
+            }
+        }
+    </script>
+{% endblock %}

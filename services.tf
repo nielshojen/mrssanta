@@ -34,8 +34,8 @@ resource "google_project_service" "apikeys" {
   disable_on_destroy = false
 }
 
-resource "google_project_service" "iap" {
+resource "google_project_service" "run" {
   project = var.project_id
-  service = "iap.googleapis.com"
+  service = "run.googleapis.com"
   disable_on_destroy = false
 }

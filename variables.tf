@@ -59,6 +59,11 @@ variable "virustotal_api_key" {
   description = "VirusTotal API Key"
 }
 
+variable "support_email" {
+  type        = string
+  description = "Contact email for support"
+}
+
 variable "labels" {
   type = map(string)
   description = "The labels to apply to the resources"

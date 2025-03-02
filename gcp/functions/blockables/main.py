@@ -279,6 +279,7 @@ def blockables(request):
             file_identifier = request_args.getlist('file_identifier')[0]
             binary = get_binary(file_identifier)
             if binary:
+                rule = None
                 response['binary'] = binary
                 
                 if 'SigningChain' in binary and binary['SigningChain']:

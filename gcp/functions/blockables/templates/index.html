@@ -77,11 +77,11 @@
         <div class="card border-dark shadow mb-4">
             {% if response.binary.VirusTotalResult == 2 %}
             <div class="card-header py-3 text-bg-danger">
-              <h6 class="m-0 font-weight-bold">Verify that intended to run this Application?</h6>
+              <h6 class="m-0 font-weight-bold">Verify that you intended to run this Application?</h6>
             </div>
             {% else %}
             <div class="card-header py-3 text-bg-success">
-              <h6 class="m-0 font-weight-bold">Verify that intended to run this Application?</h6>
+              <h6 class="m-0 font-weight-bold">Verify that you intended to run this Application?</h6>
             </div>
             {% endif %}
             <div class="card-body">
@@ -276,6 +276,7 @@
             </h2>
             <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
               <div class="accordion-body">
+                <ul>
                 {% if response.binary.FileBundleName %}
                 <p class="card-text">File Bundle Name: {{ response.binary.FileBundleName }}</p>
                 {% endif %}
@@ -289,7 +290,7 @@
                 <p class="card-text">File Name: {{ response.binary.FileName }}</p>
                 {% endif %}
                 {% if response.binary.FilePath %}
-                <p class="card-text">File Path: {{ response.binary.FilePath }}</p>
+                <p class="card-text text-break">File Path: {{ response.binary.FilePath }}</p>
                 {% endif %}
                 {% if response.binary.SignedBy %}
                 <p class="card-text">Signed By: {{ response.binary.SignedBy }}</p>
