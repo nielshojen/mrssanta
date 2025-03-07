@@ -88,10 +88,12 @@
     <script>
         let nextCursor = null;
         let loading = false;
-        let selectedDecision = "";  // Store selected Decision filter
-        let selectedVirusTotal = "";  // Store selected VirusTotalResult filter
-        let fileSha256Query = "";  // Store FileSha256 search query
-        let fileNameQuery = "";  // Store FileName search query
+        let selectedDecision = "";  
+        let selectedVirusTotal = "";  
+        let fileSha256Query = "";  
+        let fileNameQuery = "";  
+        let typingTimer; // Timer for debounce
+        const typingDelay = 500; // Wait 500ms after typing before triggering search
     
         function loadEvents(reset = false) {
             if (loading || nextCursor === false) return;
@@ -110,24 +112,28 @@
             $.get(apiURL, function(response) {
                 console.log("Response received:", response);  // Debugging
     
+                if (reset) {
+                    $("#event-body").empty(); // Ensure table resets on new search
+                }
+    
                 if (response.data.length > 0) {
                     response.data.forEach(event => {
                         let vtResult = "No Scan Available";
-                        if (event.VirusTotalResult == 2) {
+                        if (event.virustotalresult == 2) {
                             vtResult = "<b class='text-danger'>Malicious</b>";
-                        } else if (event.VirusTotalResult == 1) {
+                        } else if (event.virustotalresult == 1) {
                             vtResult = "<b class='text-success'>Safe</b>";
                         }
     
                         let row = `
                             <tr>
-                                <td>${event.FileName ? event.FileName : ""}</td>
-                                <td>${event.Decision ? event.Decision : ""}</td>
-                                <td>${event.FileSha256 ? event.FileSha256 : ""}</td>
+                                <td>${event.file_name ? event.file_name : ""}</td>
+                                <td>${event.decision ? event.decision : ""}</td>
+                                <td>${event.file_sha256 ? event.file_sha256 : ""}</td>
                                 <td>${vtResult}</td>
                                 <td>
-                                    ${event.FileSha256 
-                                        ? `<a href="/events/${event.FileSha256}" class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover">Open</a>`
+                                    ${event.file_sha256 
+                                        ? `<a href="/events/${event.file_sha256}" class="link-dark link-underline-opacity-0 link-underline-opacity-100-hover">Open</a>`
                                         : ""}
                                 </td>
                             </tr>
@@ -135,10 +141,10 @@
                         $("#event-body").append(row);
                     });
     
-                    nextCursor = response.next_cursor;  // Update cursor
+                    nextCursor = response.next_cursor;  
                     console.log("Next cursor set to:", nextCursor);
                 } else {
-                    nextCursor = false; // No more data
+                    nextCursor = false;  
                     console.log("No more events to load.");
                 }
     
@@ -148,8 +154,8 @@
         }
     
         $(document).ready(function() {
-            console.log("JavaScript initialized.");  // Debugging
-            loadEvents();  // Load first batch
+            console.log("JavaScript initialized.");  
+            loadEvents();  
     
             $(window).scroll(function() {
                 if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
@@ -161,22 +167,34 @@
             $("#decisionFilter, #virusTotalFilter").change(function() {
                 selectedDecision = $("#decisionFilter").val();
                 selectedVirusTotal = $("#virusTotalFilter").val();
-                console.log("Filters changed to: Decision =", selectedDecision, ", VirusTotal =", selectedVirusTotal);
-                loadEvents(true);  // Reset and apply new filters
+                console.log("Filters changed: Decision =", selectedDecision, ", VirusTotal =", selectedVirusTotal);
+                loadEvents(true);  
             });
     
-            // Handle FileName search
-            $("#fileNameSearch").on("input", function() {
-                fileNameQuery = $(this).val().trim();
-                console.log("FileName search updated to:", fileNameQuery);
-                loadEvents(true);  // Reset and apply new search
-            });
+            // Debounce for search fields
+            function debounceSearch() {
+                clearTimeout(typingTimer);
+                typingTimer = setTimeout(() => {
+                    fileNameQuery = $("#fileNameSearch").val().trim();
+                    fileSha256Query = $("#fileSha256Search").val().trim();
+                    console.log("Search triggered: FileName:", fileNameQuery, "FileSha256:", fileSha256Query);
+                    loadEvents(true);  
+                }, typingDelay);
+            }
     
-            // Handle FileSha256 search
-            $("#fileSha256Search").on("input", function() {
-                fileSha256Query = $(this).val().trim();
-                console.log("FileSha256 search updated to:", fileSha256Query);
-                loadEvents(true);  // Reset and apply new search
+            // Apply debounce on input fields
+            $("#fileNameSearch, #fileSha256Search").on("input", debounceSearch);
+    
+            // Allow pressing Enter to trigger search immediately
+            $("#fileNameSearch, #fileSha256Search").on("keypress", function(event) {
+                if (event.key === "Enter") {
+                    clearTimeout(typingTimer);
+                    fileNameQuery = $("#fileNameSearch").val().trim();
+                    fileSha256Query = $("#fileSha256Search").val().trim();
+                    console.log("Search triggered by Enter: FileName:", fileNameQuery, "FileSha256:", fileSha256Query);
+                    loadEvents(true);  
+                    event.preventDefault();
+                }
             });
         });
     </script>

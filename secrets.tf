@@ -60,3 +60,26 @@ resource "google_secret_manager_secret_iam_binding" "api_key" {
   members   = ["serviceAccount:${google_service_account.account.email}"]
 }
 
+# MongoDB URI
+resource "google_secret_manager_secret" "mongodb_uri" {
+  secret_id = "${var.service}-mongodb-uri"
+
+  labels = "${merge(var.labels, {
+      app     = "${var.service}",
+      service = "${var.service}",
+      env     = "prod",
+  })}"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
+resource "google_secret_manager_secret_iam_binding" "mongodb_uri" {
+
+  secret_id = google_secret_manager_secret.mongodb_uri.id
+  role      = "roles/secretmanager.secretAccessor"
+  members   = ["serviceAccount:${google_service_account.account.email}"]
+}

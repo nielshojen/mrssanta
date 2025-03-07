@@ -1,115 +1,124 @@
 {% extends 'base.html' %}
 
-{% block title %}Events{% endblock %}
+{% block title %}Devices{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        thead th {
+            background-color: #FF0000 !important;
+            color: white;
+        }
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
+    <h1 class="text-center fw-bold mb-4">Devices</h1>
 
-        <h1 class="text-center fw-bold mb-4">Devices</h1>
-
-        <div class="row">
-            <div class="table-responsive">
-            <table class="table table-bordere mb-4" id="dataTable" cellspacing="0">
-                <thead class="custom-thead">
-                    <tr>
-                    {% if data %}
-                        <th>Hostname</th>
-                        <th>PrimaryUser</th>
-                        <th>ClientMode</th>
-                        <th>SantaVersion</th>
-                        <th>OSVersion</th>
-                        <th>ModelIdentifier</th>
-                        <th>SerialNumber</th>
-                        <th>TeamIDRuleCount</th>
-                        <th>SigningIDRuleCount</th>
-                        <th>Identifier</th>
-                        <th>LastUpdated</th>
-                    {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in data %}
-                    <tr>
-                        {% if 'Hostname' in item %}
-                            <td>{{ item.Hostname }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'PrimaryUser' in item %}
-                            <td>{{ item.PrimaryUser }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'ClientMode' in item %}
-                            <td>{{ item.ClientMode }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'SantaVersion' in item %}
-                            <td>{{ item.SantaVersion }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'OSVersion' in item %}
-                            <td>{{ item.OSVersion }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'ModelIdentifier' in item %}
-                            <td>{{ item.ModelIdentifier }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'SerialNumber' in item %}
-                            <td>{{ item.SerialNumber }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'TeamIDRuleCount' in item %}
-                            <td>{{ item.TeamIDRuleCount }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'SigningIDRuleCount' in item %}
-                            <td>{{ item.SigningIDRuleCount }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'Identifier' in item %}
-                            <td>{{ item.Identifier }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'LastUpdated' in item %}
-                            <td>{{ item.LastUpdated }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
+    <!-- Search Box for Hostname -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="hostnameSearch">Search by Hostname</label>
+            <input type="text" id="hostnameSearch" class="form-control" placeholder="Enter Hostname">
         </div>
+    </div>
 
+    <div class="table-responsive">
+        <table class="table table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Hostname</th>
+                    <th>PrimaryUser</th>
+                    <th>ClientMode</th>
+                    <th>SantaVersion</th>
+                    <th>OSVersion</th>
+                    <th>ModelIdentifier</th>
+                    <th>SerialNumber</th>
+                    <th>TeamIDRuleCount</th>
+                    <th>SigningIDRuleCount</th>
+                    <th>Identifier</th>
+                    <th>LastUpdated</th>
+                </tr>
+            </thead>
+            <tbody id="devicesTableBody">
+                <!-- Devices will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="loading">Loading more devices...</div>
 {% endblock %}
 
 {% block content_scripts %}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        $(document).ready(function () {
-            $('#dataTable').DataTable({
-                "paging": true,                     // Enables pagination
-                "searching": true,                  // Enables search box
-                "ordering": true,                   // Enables sorting
-                "info": true,                       // Shows "Showing X of Y entries"
-                "lengthMenu": [5, 10, 25, 50, 100], // Controls page length options
-                "pageLength": 50                    // Default rows per page
+        let nextCursor = null;
+        let loading = false;
+        let hostnameQuery = "";
+    
+        function loadDevices(reset = false) {
+            if (loading || nextCursor === false) return;
+            loading = true;
+            $("#loading").show();
+    
+            if (reset) {
+                $("#devicesTableBody").empty();
+                nextCursor = null;
+            }
+    
+            $.get("/load_devices", { cursor: nextCursor, hostname: hostnameQuery }, function(response) {
+                if (response.data.length > 0) {
+                    response.data.forEach(device => {
+                        let row = `
+                            <tr>
+                                <td>${device.hostname || ""}</td>
+                                <td>${device.primary_user || ""}</td>
+                                <td>${device.client_mode || ""}</td>
+                                <td>${device.santa_version || ""}</td>
+                                <td>${device.os_version || ""}</td>
+                                <td>${device.model_identifier || ""}</td>
+                                <td>${device.scroll || ""}</td>
+                                <td>${device.teamid_rule_count || 0}</td>
+                                <td>${device.signingid_rule_count || 0}</td>
+                                <td>${device.identifier || ""}</td>
+                                <td>${device.last_updated || ""}</td>
+                            </tr>
+                        `;
+                        $("#devicesTableBody").append(row);
+                    });
+    
+                    nextCursor = response.next_cursor;
+                } else {
+                    nextCursor = false;
+                }
+    
+                $("#loading").hide();
+                loading = false;
+            });
+        }
+    
+        $(document).ready(function() {
+            loadDevices();  // Load first batch
+    
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadDevices();
+                }
+            });
+    
+            // Trigger search only when Enter is pressed
+            $("#hostnameSearch").on("keypress", function(event) {
+                if (event.key === "Enter") {
+                    hostnameQuery = $(this).val().trim();
+                    loadDevices(true);
+                    event.preventDefault(); // Prevents form submission (if inside a form)
+                }
             });
         });
     </script>

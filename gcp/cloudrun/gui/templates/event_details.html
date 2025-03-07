@@ -8,9 +8,75 @@
 
 {% block content %}
 
-        <h1 class="text-center fw-bold mb-4">Event Details <button class="btn btn-santa btn-sm" onclick="deleteEvent('{{ data.FileSha256 }}')">Delete Event</button></h1>
+        <h1 class="text-center fw-bold mb-4">
+            Event Details 
+            <button class="btn btn-santa btn-sm me-" onclick="deleteEvent('{{ data.FileSha256 }}')">
+                Delete Event
+            </button>
+            <button type="button" class="btn btn-santa btn-sm" data-bs-toggle="modal" data-bs-target="#navigationModal">
+                Create Rule
+            </button>
+        </h1>
 
-        
+        <!-- Create Rule -->
+        <div class="modal fade" id="navigationModal" tabindex="-1" aria-labelledby="navigationModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="navigationModalLabel">Create Rule</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="evaluationSelect" class="form-label">Evaluation</label>
+                            <select id="evaluationSelect" class="form-select">
+                                {% if data.CDHash %}
+                                <option value="CDHASH" data-identifier="{{ data.CDHash }}">CD Hash</option>
+                                {% endif %}
+                                {% if data.FileSha256 %}
+                                <option value="BINARY" data-identifier="{{ data.FileSha256 }}">Binary</option>
+                                {% endif %}
+                                {% if data.SigningID %}
+                                <option value="SIGNINGID" data-identifier="{{ data.SigningID }}">Signing ID</option>
+                                {% endif %}
+                                {% if data.SigningChain and data.SigningChain|length > 0 %}
+                                <option value="CERTIFICATE" data-identifier="{{ data.SigningChain[0].Sha256 }}">Certificate</option>
+                                {% endif %}
+                                {% if data.TeamID %}
+                                <option value="TEAMID" data-identifier="{{ data.TeamID }}">Team ID</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <input type="hidden" id="identifierInput">
+                        <div class="mb-3">
+                            <label for="actionSelect" class="form-label">Action</label>
+                            <select id="actionSelect" class="form-select">
+                                <option value="ALLOWLIST" selected>Allow</option>
+                                <option value="ALLOWLIST_COMPILER">Allow Compiler</option>
+                                <option value="BLOCKLIST">Block</option>
+                                <option value="SILENT_BLOCKLIST">Silent Block</option>
+                                <option value="REMOVE">Remove</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="scopeSelect" class="form-label">Scope</label>
+                            <select id="scopeSelect" class="form-select">
+                                <option value="global" selected>Global</option>
+                                <option value="munki">Munki</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customMessage" class="form-label">Custom Message</label>
+                            <input type="text" id="customMessage" class="form-control" placeholder="Custom Message">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="goToPage">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="row mb-4">
             <div class="col-md-6">
@@ -269,6 +335,7 @@
 {% endblock %}
 
 {% block content_scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         document.getElementById("virusTotalButton").addEventListener("click", function() {
             let url = "https://www.virustotal.com/gui/file/{{ data.FileSha256 }}";
@@ -292,5 +359,54 @@
                 .catch(error => alert("Error: " + error));
             }
         }
+    </script>
+    <script>
+        $(document).ready(function() {
+            function updateIdentifier() {
+                let selectedOption = $("#evaluationSelect option:selected");
+                let identifier = selectedOption.attr("data-identifier");  // Get identifier
+
+                $("#identifierInput").val(identifier || "");
+            }
+
+            $("#evaluationSelect").change(updateIdentifier);
+
+            updateIdentifier();
+
+            $("#goToPage").click(function() {
+                let selectedEvaluation = $("#evaluationSelect").val();
+                let selectedIdentifier = $("#identifierInput").val();
+                let selectedAction = $("#actionSelect").val();
+                let selectedScope = $("#scopeSelect").val();
+                let customMessage = $("#customMessage").val().trim();
+
+                if (!selectedEvaluation || !selectedIdentifier) {
+                    alert("Please select an evaluation and ensure an identifier is set.");
+                    return;
+                }
+
+                let ruleData = {
+                    evaluation: selectedEvaluation,
+                    identifier: selectedIdentifier,
+                    action: selectedAction,
+                    scope: selectedScope,
+                    custom_message: customMessage
+                };
+
+                $.ajax({
+                    url: "/save_rule",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(ruleData),
+                    success: function() {
+                        alert("Rule saved successfully!");
+                        $("#navigationModal").modal("hide");
+                    },
+                    error: function() {
+                        alert("Failed to save rule.");
+                    }
+                });
+            });
+        });
     </script>
 {% endblock %}

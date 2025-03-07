@@ -1,85 +1,152 @@
 {% extends 'base.html' %}
 
-{% block title %}Events{% endblock %}
+{% block title %}Rules{% endblock %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
+    <h1 class="text-center fw-bold mb-4">Rules</h1>
 
-        <h1 class="text-center fw-bold mb-4">Rules</h1>
-
-        <div class="row">
-            <div class="table-responsive">
-            <table class="table table-bordere mb-4" id="dataTable" cellspacing="0">
-                <thead>
-                    <tr>
-                    {% if data %}
-                        <th>Hostname</th>
-                        <th>CustomMessage</th>
-                        <th>RuleType</th>
-                        <th>Policy</th>
-                        <th>Scope</th>
-                        <th>Assigned</th>
-                    {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in data %}
-                    <tr>
-                        {% if 'Identifier' in item %}
-                            <td>{{ item.Identifier }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'CustomMessage' in item %}
-                            <td>{{ item.CustomMessage }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'RuleType' in item %}
-                            <td>{{ item.RuleType }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'Policy' in item %}
-                            <td>{{ item.Policy }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'Scope' in item %}
-                            <td>{{ item.Scope }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                        {% if 'Assigned' in item %}
-                            <td>{{ item.Assigned|length }}</td>
-                        {% else %}
-                            <td></td>
-                        {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
+    <!-- Search & Filters -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label for="identifierSearch">Search by Identifier</label>
+            <input type="text" id="identifierSearch" class="form-control" placeholder="Enter Identifier">
         </div>
 
+        <div class="col-md-3">
+            <label for="ruleTypeFilter">Filter by RuleType</label>
+            <select id="ruleTypeFilter" class="form-select">
+                <option value="">All</option>
+                <option value="BINARY">Binary</option>
+                <option value="CERTIFICATE">Certificate</option>
+                <option value="TEAMID">Team ID</option>
+                <option value="SIGNINGID">Signing ID</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="policyFilter">Filter by Policy</label>
+            <select id="policyFilter" class="form-select">
+                <option value="">All</option>
+                <option value="ALLOWLIST">Allow</option>
+                <option value="BLOCKLIST">Block</option>
+                <option value="REMOVE">Remove</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="scopeFilter">Filter by Scope</label>
+            <select id="scopeFilter" class="form-select">
+                <option value="">All</option>
+                <option value="global">Global</option>
+                <option value="munki">Munki</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Identifier</th>
+                    <th>CustomMessage</th>
+                    <th>RuleType</th>
+                    <th>Policy</th>
+                    <th>Scope</th>
+                    <th>Assigned</th>
+                </tr>
+            </thead>
+            <tbody id="rulesTableBody">
+                <!-- Rules will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="loading">Loading more rules...</div>
 {% endblock %}
 
 {% block content_scripts %}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
-        $(document).ready(function () {
-            $('#dataTable').DataTable({
-                "paging": true,                     // Enables pagination
-                "searching": true,                  // Enables search box
-                "ordering": true,                   // Enables sorting
-                "info": true,                       // Shows "Showing X of Y entries"
-                "lengthMenu": [5, 10, 25, 50, 100], // Controls page length options
-                "pageLength": 50                    // Default rows per page
+        let nextCursor = null;
+        let loading = false;
+        let identifierQuery = "";
+        let selectedRuleType = "";
+        let selectedPolicy = "";
+        let selectedScope = "";
+
+        function loadRules(reset = false) {
+            if (loading || nextCursor === false) return;
+            loading = true;
+            $("#loading").show();
+
+            if (reset) {
+                $("#rulesTableBody").empty();
+                nextCursor = null;
+            }
+
+            $.get("/load_rules", {
+                cursor: nextCursor,
+                identifier: identifierQuery,
+                rule_type: selectedRuleType,
+                policy: selectedPolicy,
+                scope: selectedScope
+            }, function(response) {
+                if (response.data.length > 0) {
+                    response.data.forEach(rule => {
+                        let row = `
+                            <tr>
+                                <td>${rule.identifier || ""}</td>
+                                <td>${rule.custom_msg || ""}</td>
+                                <td>${rule.rule_type || ""}</td>
+                                <td>${rule.policy || ""}</td>
+                                <td>${rule.scope || ""}</td>
+                                <td>${rule.assigned ? rule.assigned.length : 0}</td>
+                            </tr>
+                        `;
+                        $("#rulesTableBody").append(row);
+                    });
+
+                    nextCursor = response.next_cursor;
+                } else {
+                    nextCursor = false;
+                }
+
+                $("#loading").hide();
+                loading = false;
+            });
+        }
+
+        $(document).ready(function() {
+            loadRules();  // Load first batch
+
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadRules();
+                }
+            });
+
+            $("#identifierSearch").on("input", function() {
+                identifierQuery = $(this).val().trim();
+                loadRules(true);
+            });
+
+            $("#ruleTypeFilter, #policyFilter, #scopeFilter").change(function() {
+                selectedRuleType = $("#ruleTypeFilter").val();
+                selectedPolicy = $("#policyFilter").val();
+                selectedScope = $("#scopeFilter").val();
+                loadRules(true);
             });
         });
     </script>

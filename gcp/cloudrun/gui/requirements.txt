@@ -2,3 +2,5 @@ Flask
 gunicorn
 google-cloud-firestore
 requests
+pymongo
+dnspython

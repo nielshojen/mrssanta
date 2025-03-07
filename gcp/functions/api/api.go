@@ -23,6 +23,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Endpoint := r.URL.Query().Get("endpoint")
+	fmt.Println("Request for:", Endpoint)
 	if Endpoint != "" {
 		fmt.Println("Request for:", Endpoint)
 	}
@@ -104,10 +105,52 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
-		// Serialize and write the rules as JSON
+		// Serialize and write the devices as JSON
 		if err := json.NewEncoder(w).Encode(devices); err != nil {
 			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
 		}
+
+	case r.Method == http.MethodGet && Endpoint == "devices" && ID != "":
+		// Handle GET /rules/{id}
+		device, err := getDeviceByID(ctx, ID)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error fetching device: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Set response headers
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		// Serialize and write the rules as JSON
+		if err := json.NewEncoder(w).Encode(device); err != nil {
+			http.Error(w, fmt.Sprintf("Error encoding response: %v", err), http.StatusInternalServerError)
+		}
+
+	case r.Method == http.MethodPost && Endpoint == "devices":
+		// Handle POST /rules
+
+		// Read the request body
+		reqBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Failed to read request body: %v", err)
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		// Call createRules to parse and save the rules
+		devices, err := createDevice(ctx, w, reqBody)
+		if err != nil {
+			log.Printf("Failed to create devices: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to create devices: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// Respond with success
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"message": "Devices saved successfully", "count": %d}`, len(devices))
 
 	case r.Method == http.MethodGet && Endpoint == "events" && ID == "":
 		// Handle GET /rules

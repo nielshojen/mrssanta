@@ -13,78 +13,103 @@ import (
 	"os"
 	"time"
 
-	"google.golang.org/api/iterator"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func getGlobalRules(ctx context.Context) ([]*Rule, error) {
+func getGlobalRules(ctx context.Context, client *mongo.Client) ([]*Rule, error) {
+	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("Scope", "==", "global")
-	iter := query.Documents(ctx)
+	// MongoDB query equivalent to Firestore's `.Where("Scope", "==", "global")`
+	filter := bson.M{"scope": "global"}
 
+	// Find all matching rules
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch rules: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	// Convert MongoDB results to `Rule` struct
 	var rules []*Rule
-	for {
+	for cursor.Next(ctx) {
 		var r Rule
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		err = doc.DataTo(&r)
-		if err != nil {
-			return nil, err
+		if err := cursor.Decode(&r); err != nil {
+			return nil, fmt.Errorf("failed to decode rule: %v", err)
 		}
 		rules = append(rules, &r)
 	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
 	return rules, nil
 }
 
-func getMunkiRules(ctx context.Context, ID string) ([]*Rule, error) {
+func getMunkiRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
+	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("Scope", "==", "munki").Where("Assigned", "array-contains", ID)
-	iter := query.Documents(ctx)
+	// MongoDB query equivalent to Firestore's `.Where("Scope", "==", "munki").Where("Assigned", "array-contains", ID)`
+	filter := bson.M{
+		"scope":    "munki",
+		"assigned": ID, // MongoDB automatically handles `array-contains`
+	}
 
+	// Find all matching rules
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch rules: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	// Convert MongoDB results to `Rule` struct
 	var rules []*Rule
-	for {
+	for cursor.Next(ctx) {
 		var r Rule
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		err = doc.DataTo(&r)
-		if err != nil {
-			return nil, err
+		if err := cursor.Decode(&r); err != nil {
+			return nil, fmt.Errorf("failed to decode rule: %v", err)
 		}
 		rules = append(rules, &r)
 	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
 	return rules, nil
 }
 
-func getMachineRules(ctx context.Context, ID string) ([]*Rule, error) {
+func getMachineRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
+	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
 
-	query := client.Collection(os.Getenv("DB_PREFIX")+"_rules").Where("Scope", "==", "machine").Where("Assigned", "array-contains", ID)
-	iter := query.Documents(ctx)
+	// MongoDB query equivalent to Firestore's `.Where("Scope", "==", "machine").Where("Assigned", "array-contains", ID)`
+	filter := bson.M{
+		"scope":    "machine",
+		"assigned": ID, // MongoDB automatically handles `array-contains`
+	}
 
+	// Find all matching rules
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch rules: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	// Convert MongoDB results to `Rule` struct
 	var rules []*Rule
-	for {
+	for cursor.Next(ctx) {
 		var r Rule
-		doc, err := iter.Next()
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		err = doc.DataTo(&r)
-		if err != nil {
-			return nil, err
+		if err := cursor.Decode(&r); err != nil {
+			return nil, fmt.Errorf("failed to decode rule: %v", err)
 		}
 		rules = append(rules, &r)
 	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+
 	return rules, nil
 }
 
@@ -165,21 +190,21 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Logic to handle machine_id and cursor
-	globalrules, err := getGlobalRules(ctx)
+	globalrules, err := getGlobalRules(ctx, client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get global rules: %v", err), http.StatusInternalServerError)
 		return
 	}
 	rules = append(rules, globalrules...)
 
-	munkirules, err := getMunkiRules(ctx, machineID)
+	munkirules, err := getMunkiRules(ctx, client, machineID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get munki rules: %v", err), http.StatusInternalServerError)
 		return
 	}
 	rules = append(rules, munkirules...)
 
-	machinerules, err := getMachineRules(ctx, machineID)
+	machinerules, err := getMachineRules(ctx, client, machineID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get machine rules: %v", err), http.StatusInternalServerError)
 		return

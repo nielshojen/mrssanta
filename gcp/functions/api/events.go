@@ -7,60 +7,75 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func getAllEvents(ctx context.Context) ([]map[string]interface{}, error) {
-	// Query Firestore collection
-	query := client.Collection(os.Getenv("DB_PREFIX") + "_events")
-	docs, err := query.Documents(ctx).GetAll()
+	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("events")
+
+	// Find all documents
+	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		log.Printf("Failed to retrieve events: %v", err)
 		return nil, fmt.Errorf("failed to retrieve events: %w", err)
 	}
+	defer cursor.Close(ctx)
 
-	// Convert Firestore documents to a generic JSON-friendly format
+	// Convert MongoDB documents to a JSON-friendly format
 	var events []map[string]interface{}
-	for _, doc := range docs {
-		data := doc.Data() // Retrieve document as a map
-
-		// Convert Firestore timestamps to RFC3339 formatted strings
-		if creationTime, ok := data["CreationTime"].(time.Time); ok {
-			data["CreationTime"] = creationTime.Format(time.RFC3339)
-		}
-		if lastUpdated, ok := data["LastUpdated"].(time.Time); ok {
-			data["LastUpdated"] = lastUpdated.Format(time.RFC3339)
+	for cursor.Next(ctx) {
+		var doc bson.M
+		if err := cursor.Decode(&doc); err != nil {
+			log.Printf("Failed to decode event document: %v", err)
+			continue
 		}
 
-		events = append(events, data)
+		// Convert MongoDB timestamps (primitive.DateTime) to RFC3339 formatted strings
+		if creationTime, ok := doc["creation_time"].(primitive.DateTime); ok {
+			doc["creation_time"] = creationTime.Time().Format(time.RFC3339)
+		}
+		if lastUpdated, ok := doc["last_updated"].(primitive.DateTime); ok {
+			doc["last_updated"] = lastUpdated.Time().Format(time.RFC3339)
+		}
+
+		events = append(events, doc)
+	}
+
+	// Check for cursor errors
+	if err := cursor.Err(); err != nil {
+		log.Printf("Cursor error: %v", err)
+		return nil, fmt.Errorf("cursor error: %w", err)
 	}
 
 	return events, nil
 }
 
-func getEventByID(ctx context.Context, machineID string) (*Event, error) {
-	// Reference Firestore document directly by ID
-	docRef := client.Collection(os.Getenv("DB_PREFIX") + "_events").Doc(machineID)
+func getEventByID(ctx context.Context, eventID string) (*Event, error) {
+	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("events")
 
-	// Get document snapshot
-	docSnap, err := docRef.Get(ctx)
+	// Convert eventID to ObjectID if it's stored as an ObjectID
+	objID, err := primitive.ObjectIDFromHex(eventID)
 	if err != nil {
-		// Handle case where document does not exist
-		if status.Code(err) == codes.NotFound {
-			log.Printf("Event %s not found in Firestore", machineID)
-			return nil, nil // Return nil instead of an empty slice
+		log.Printf("Invalid event ID format: %v", err)
+		return nil, fmt.Errorf("invalid event ID format: %w", err)
+	}
+
+	// Fetch document by ID
+	var event Event
+	err = collection.FindOne(ctx, bson.M{"_id": objID}).Decode(&event)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Printf("Event %s not found in MongoDB", eventID)
+			return nil, nil // Return nil to indicate no result
 		}
-		log.Printf("Error fetching event %s: %v", machineID, err)
+		log.Printf("Error fetching event %s: %v", eventID, err)
 		return nil, fmt.Errorf("failed to fetch event: %w", err)
 	}
 
-	// Unmarshal document into Rule struct
-	var event Event
-	if err := docSnap.DataTo(&event); err != nil {
-		log.Printf("Failed to decode rule document: %v", err)
-		return nil, fmt.Errorf("failed to decode event: %w", err)
-	}
+	// Convert MongoDB timestamps to time.Time (if needed)
+	event.LastUpdated = primitive.NewDateTimeFromTime(event.LastUpdated.Time())
 
 	return &event, nil
 }

@@ -5,12 +5,20 @@ import (
 	"compress/zlib"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func sanitizeEvent(event Event) Event {
@@ -26,6 +34,7 @@ func sanitizeEvent(event Event) Event {
 		"PID",
 		"PPID",
 		"Labels",
+		"Severity",
 	} {
 		field, found := eventType.FieldByName(fieldName)
 		if found {
@@ -86,6 +95,9 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Define a set of Decision values to skip
+	skipDecisions := map[string]bool{}
+
 	// Process events
 	var savedBinaries []string
 	for _, event := range request.Events {
@@ -98,10 +110,13 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		sanitizedEvent := sanitizeEvent(event)
 
-		_, err = saveEvent(ctx, client, sanitizedEvent)
-		if err != nil {
-			fmt.Println("Error saving event:", err)
-			return
+		// Check if the Decision is in the skip list
+		if !skipDecisions[sanitizedEvent.Decision] {
+			_, err = saveEvent(ctx, client, sanitizedEvent)
+			if err != nil {
+				fmt.Println("Error saving event:", err)
+				return
+			}
 		}
 
 		savedBinaries = append(savedBinaries, sanitizedEvent.FileSha256)
@@ -131,4 +146,49 @@ func decompressZlib(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to decompress data: %w", err)
 	}
 	return decompressedData.Bytes(), nil
+}
+
+func saveEvent(ctx context.Context, client *mongo.Client, event Event) (Event, error) {
+	// Check if FileSha256 field exists
+	if event.FileSha256 == "" {
+		return Event{}, errors.New("no file_sha256 field in the event")
+	}
+
+	// Get MongoDB collection
+	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("events")
+
+	// Convert time.Time to primitive.DateTime
+	event.LastUpdated = primitive.NewDateTimeFromTime(time.Now().UTC())
+
+	// Set `_id` to `FileSha256`
+	event.ID = event.FileSha256
+
+	// Convert event struct to BSON (excluding `_id` to prevent modification errors)
+	updateData, err := bson.Marshal(event)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to convert event to BSON: %v", err)
+	}
+
+	// Convert BSON to map to avoid modifying `_id`
+	var updateMap bson.M
+	err = bson.Unmarshal(updateData, &updateMap)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to unmarshal BSON: %v", err)
+	}
+
+	delete(updateMap, "_id") // Ensure `_id` is not updated
+
+	// Perform upsert (insert if not exists, update if exists)
+	_, err = collection.UpdateOne(
+		ctx,
+		bson.M{"_id": event.ID},   // Match by `_id`
+		bson.M{"$set": updateMap}, // Dynamically update all fields
+		options.Update().SetUpsert(true),
+	)
+
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to store data in MongoDB: %v", err)
+	}
+
+	return event, nil
 }

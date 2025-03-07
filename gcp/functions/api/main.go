@@ -5,37 +5,43 @@ import (
 	"log"
 	"os"
 
-	"cloud.google.com/go/firestore"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
-var client *firestore.Client
-var firestoreDatabasePath string
+// var client *firestore.Client
+// var firestoreDatabasePath string
+
+var client *mongo.Client
 
 var validAPIKey = os.Getenv("API_KEY")
 
 func init() {
 	var err error
-	ctx := context.Background()
+	// ctx := context.Background()
 
 	projectID := os.Getenv("GCP_PROJECT")
 	if projectID == "" {
 		log.Fatal("GCP_PROJECT environment variable is not set")
 	}
 
-	firestoreDatabasePath = os.Getenv("FIRESTORE_DATABASE")
-	if firestoreDatabasePath == "" {
-		log.Fatal("FIRESTORE_DATABASE environment variable is not set")
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		log.Fatal("Missing MONGO_URI environment variable")
 	}
 
-	dbPrefix := os.Getenv("DB_PREFIX")
-	if dbPrefix == "" {
-		log.Fatal("DB_PREFIX environment variable is not set")
-	}
+	println("Connecting using URI: ", mongoURI)
 
-	client, err = firestore.NewClientWithDatabase(ctx, projectID, firestoreDatabasePath)
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {
-		log.Fatalf("error initializing Cloud Firestore client: %v", err)
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
+	}
+
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatalf("MongoDB connection failed: %v", err)
 	}
 
 	functions.HTTP("api", apiHandler)

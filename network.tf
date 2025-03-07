@@ -1,8 +1,13 @@
+data "google_vpc_access_connector" "connector" {
+  name   = "serverless-connector"
+  region = var.region
+}
+
 resource "google_compute_region_network_endpoint_group" "backend" {
   provider              = google-beta
   project               = var.project_id
   name                  = "${var.project_id}-${var.service}-endpoint-group"
-  region                = var.region
+  region                = "europe-west1"
   network_endpoint_type = "SERVERLESS"
   serverless_deployment {
     platform = "apigateway.googleapis.com"

@@ -34,11 +34,17 @@ resource "google_cloudfunctions2_function" "eventupload" {
       LOG_EXECUTION_ID = "true"
       GCP_PROJECT = var.project_id
       FIRESTORE_DATABASE = google_firestore_database.database.name
-      DB_PREFIX = var.service
+      DB_COLLECTION= var.service
       ENVIRONMENT = var.environment
       OWNER = var.owner
       TEAM = var.team
       VERSION = var.service_version
+    }
+    secret_environment_variables {
+      key        = "MONGO_URI"
+      project_id = var.project_id
+      secret     = google_secret_manager_secret.mongodb_uri.secret_id
+      version    = "latest"
     }
     secret_environment_variables {
       key        = "API_KEY"
@@ -46,6 +52,8 @@ resource "google_cloudfunctions2_function" "eventupload" {
       secret     = google_secret_manager_secret.api_key.secret_id
       version    = "latest"
     }
+    vpc_connector = data.google_vpc_access_connector.connector.id
+    vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.account.email
   }
