@@ -202,7 +202,7 @@ def blockables(request):
                     rule['assigned'] = assigned
                     save_rule(ruleid, rule)
             return jsonify({"success": True, "message": "Rule added successfully!"}), 200
-        elif data['action'] == "munki":
+        elif data['action'] == "managedapp":
             identifier = data['identifier']
             scope = data['scope']
             ruletype = data['ruletype']
