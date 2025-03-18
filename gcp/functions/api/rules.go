@@ -117,7 +117,7 @@ func createRules(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([
 		updateFields := bson.M{}
 		jsonData, _ := json.Marshal(rule)
 		json.Unmarshal(jsonData, &updateFields)
-
+		updateFields["creation_time"] = rule.CreationTime
 		updateFields["last_updated"] = now
 
 		filter := bson.M{"_id": rule.Identifier}
@@ -132,4 +132,33 @@ func createRules(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([
 	}
 
 	return rules, nil
+}
+
+func assignRule(ctx context.Context, w http.ResponseWriter, jsonData []byte, ruleID string) error {
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
+
+	var device Device
+	err := json.Unmarshal(jsonData, &device)
+	if err != nil {
+		log.Printf("Failed to decode JSON: %v", err)
+		return fmt.Errorf("failed to decode JSON: %w", err)
+	}
+
+	filter := bson.M{"_id": ruleID}
+	update := bson.M{
+		"$addToSet": bson.M{"assigned": device.Identifier},
+	}
+
+	result, err := collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		log.Printf("Error updating rule %s: %v", ruleID, err)
+		return fmt.Errorf("failed to update rule: %w", err)
+	}
+
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("rule %s not found in MongoDB", ruleID)
+	}
+
+	log.Printf("Successfully assigned device %s to rule %s", device.Identifier, ruleID)
+	return nil
 }

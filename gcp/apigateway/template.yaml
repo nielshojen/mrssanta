@@ -251,6 +251,27 @@ paths:
           description: "Successful response"
           schema:
             $ref: '#/definitions/AnyValue'
+    post:
+      summary: "Handle api requests"
+      operationId: apiendpointidpost
+      x-google-backend:
+        address: ${ API_URL }
+      parameters:
+        - name: endpoint
+          in: path
+          required: true
+          type: string
+          description: "endpoint"
+        - name: id
+          in: path
+          required: true
+          type: string
+          description: "ID of the rule"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: '#/definitions/AnyValue'
 definitions:
   AnyValue: {}
   PreflightRequest:

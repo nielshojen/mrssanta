@@ -4,7 +4,7 @@ Santa sync server inspired by projects like Rudolph and Moroz
 
 ### Goals
 
-* Run on Google Cloud
+* Run on Google Cloud and Azure
 * Use serverless components as much as possible
 * "Integrate" with Munki, so managed software is only allowed to run if installed by Munki. This is to keep apps patched and be in control of licensing
 * Frequent syncs (eg. every 60 secs) to allow close to live blocking/unblocking
