@@ -6,7 +6,6 @@ import (
 	"os"
 )
 
-// Log to GCP Cloud logging
 func logEvent(event Event) error {
 
 	logevent := event

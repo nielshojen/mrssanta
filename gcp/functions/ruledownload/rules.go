@@ -4,33 +4,29 @@ import (
 	"bytes"
 	"compress/zlib"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func getGlobalRules(ctx context.Context, client *mongo.Client) ([]*Rule, error) {
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 
-	// MongoDB query equivalent to Firestore's `.Where("Scope", "==", "global")`
 	filter := bson.M{"scope": "global"}
 
-	// Find all matching rules
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rules: %v", err)
 	}
 	defer cursor.Close(ctx)
 
-	// Convert MongoDB results to `Rule` struct
 	var rules []*Rule
 	for cursor.Next(ctx) {
 		var r Rule
@@ -48,22 +44,19 @@ func getGlobalRules(ctx context.Context, client *mongo.Client) ([]*Rule, error) 
 }
 
 func getMunkiRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 
-	// MongoDB query equivalent to Firestore's `.Where("Scope", "==", "munki").Where("Assigned", "array-contains", ID)`
 	filter := bson.M{
 		"scope":    "munki",
-		"assigned": ID, // MongoDB automatically handles `array-contains`
+		"assigned": ID,
 	}
 
-	// Find all matching rules
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rules: %v", err)
 	}
 	defer cursor.Close(ctx)
 
-	// Convert MongoDB results to `Rule` struct
 	var rules []*Rule
 	for cursor.Next(ctx) {
 		var r Rule
@@ -81,22 +74,19 @@ func getMunkiRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rul
 }
 
 func getMachineRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 
-	// MongoDB query equivalent to Firestore's `.Where("Scope", "==", "machine").Where("Assigned", "array-contains", ID)`
 	filter := bson.M{
 		"scope":    "machine",
-		"assigned": ID, // MongoDB automatically handles `array-contains`
+		"assigned": ID,
 	}
 
-	// Find all matching rules
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rules: %v", err)
 	}
 	defer cursor.Close(ctx)
 
-	// Convert MongoDB results to `Rule` struct
 	var rules []*Rule
 	for cursor.Next(ctx) {
 		var r Rule
@@ -113,29 +103,48 @@ func getMachineRules(ctx context.Context, client *mongo.Client, ID string) ([]*R
 	return rules, nil
 }
 
+func encodeCursor(cursor CursorMetadata) string {
+	data, _ := json.Marshal(cursor)
+	return base64.StdEncoding.EncodeToString(data)
+}
+
+func decodeCursor(cursorStr string) (CursorMetadata, error) {
+	data, err := base64.StdEncoding.DecodeString(cursorStr)
+	if err != nil {
+		return CursorMetadata{}, err
+	}
+	var cursor CursorMetadata
+	err = json.Unmarshal(data, &cursor)
+	return cursor, err
+}
+
 func paginateRules(rules []*Rule, r *http.Request) ([]*Rule, string) {
-	cursor := r.URL.Query().Get("cursor")
+	cursorStr := r.URL.Query().Get("cursor")
 	startIndex := 0
 
-	// Find the start index based on the provided cursor
-	for i, rule := range rules {
-		if rule.Identifier == cursor {
-			startIndex = i + 1
-			break
+	if cursorStr != "" {
+		cursor, err := decodeCursor(cursorStr)
+		if err == nil {
+			for i, rule := range rules {
+				if rule.Identifier == cursor.Identifier {
+					startIndex = i + 1
+					break
+				}
+			}
 		}
 	}
 
-	// Paginate rules based on the start index and batchSize
 	endIndex := startIndex + batchSize
 	if endIndex > len(rules) {
 		endIndex = len(rules)
 	}
+
 	paginatedRules := rules[startIndex:endIndex]
 
-	// Determine the cursor for the next page
 	nextCursor := ""
 	if endIndex < len(rules) {
-		nextCursor = time.Now().Format(time.RFC3339)
+		lastRule := rules[endIndex-1]
+		nextCursor = encodeCursor(CursorMetadata{Identifier: lastRule.Identifier})
 	}
 
 	return paginatedRules, nextCursor
@@ -146,17 +155,14 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	var reponse Response
 	var rules []*Rule
 
-	// Extract the API key from the header
 	apiKey := r.Header.Get("X-API-Key")
 
-	// Validate the API key
 	if apiKey != validAPIKey {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, `{"error": "Unauthorized"}`)
 		return
 	}
 
-	// Extract machine ID from the query parameters
 	machineID := r.URL.Query().Get("machine_id")
 	if machineID == "" {
 		http.Error(w, "Machine ID is missing in the request URL", http.StatusBadRequest)
@@ -169,13 +175,12 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Cannot parse request body: %v\n", err)
 	}
 	defer r.Body.Close()
 
-	// Decompress the data
 	decompressedData, err := decompressZlib(reqBody)
 	if err != nil {
 		log.Printf("Failed to decompress body: %v", err)
@@ -189,7 +194,6 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Logic to handle machine_id and cursor
 	globalrules, err := getGlobalRules(ctx, client)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get global rules: %v", err), http.StatusInternalServerError)
@@ -211,12 +215,12 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	rules = append(rules, machinerules...)
 
-	// Paginate rules
 	paginatedRules, cursor := paginateRules(rules, r)
 
 	responseData := map[string]interface{}{
 		"rules": paginatedRules,
 	}
+
 	if cursor != "" {
 		responseData["cursor"] = cursor
 	}
@@ -232,7 +236,6 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(responseJSON)
 }
 
-// decompressZlib decompresses zlib-compressed data
 func decompressZlib(data []byte) ([]byte, error) {
 	reader, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {

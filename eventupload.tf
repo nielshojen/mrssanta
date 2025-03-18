@@ -33,8 +33,7 @@ resource "google_cloudfunctions2_function" "eventupload" {
     environment_variables = {
       LOG_EXECUTION_ID = "true"
       GCP_PROJECT = var.project_id
-      FIRESTORE_DATABASE = google_firestore_database.database.name
-      DB_COLLECTION= var.service
+      MONGO_DB = var.service
       ENVIRONMENT = var.environment
       OWNER = var.owner
       TEAM = var.team

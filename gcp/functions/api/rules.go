@@ -17,9 +17,8 @@ import (
 )
 
 func getAllRules(ctx context.Context) ([]map[string]interface{}, error) {
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 
-	// Find all documents in the collection
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		log.Printf("Failed to retrieve rules: %v", err)
@@ -27,7 +26,6 @@ func getAllRules(ctx context.Context) ([]map[string]interface{}, error) {
 	}
 	defer cursor.Close(ctx)
 
-	// Convert MongoDB documents to a generic JSON-friendly format
 	var rules []map[string]interface{}
 	for cursor.Next(ctx) {
 		var doc bson.M
@@ -36,7 +34,6 @@ func getAllRules(ctx context.Context) ([]map[string]interface{}, error) {
 			continue
 		}
 
-		// Convert MongoDB timestamps to RFC3339 formatted strings
 		if creationTime, ok := doc["CreationTime"].(primitive.DateTime); ok {
 			doc["CreationTime"] = creationTime.Time().Format(time.RFC3339)
 		}
@@ -56,9 +53,8 @@ func getAllRules(ctx context.Context) ([]map[string]interface{}, error) {
 }
 
 func getRuleByID(ctx context.Context, ruleID string) ([]map[string]interface{}, error) {
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 
-	// Fetch document by ID into a flexible `bson.M`
 	var rules []map[string]interface{}
 	var doc bson.M
 	err := collection.FindOne(ctx, bson.M{"_id": ruleID}).Decode(&doc)
@@ -71,10 +67,10 @@ func getRuleByID(ctx context.Context, ruleID string) ([]map[string]interface{}, 
 		return nil, fmt.Errorf("failed to fetch rule: %w", err)
 	}
 
-	// Convert MongoDB timestamps (primitive.DateTime) to RFC3339 formatted strings
 	if creationTime, ok := doc["CreationTime"].(primitive.DateTime); ok {
 		doc["CreationTime"] = creationTime.Time().Format(time.RFC3339)
 	}
+
 	if lastUpdated, ok := doc["LastUpdated"].(primitive.DateTime); ok {
 		doc["LastUpdated"] = lastUpdated.Time().Format(time.RFC3339)
 	}
@@ -85,9 +81,8 @@ func getRuleByID(ctx context.Context, ruleID string) ([]map[string]interface{}, 
 }
 
 func createRules(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([]*Rule, error) {
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("rules")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 
-	// Decode JSON into slice of Rule structs
 	var rules []*Rule
 	err := json.Unmarshal(jsonData, &rules)
 	if err != nil {
@@ -95,7 +90,6 @@ func createRules(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([
 		return nil, fmt.Errorf("failed to decode JSON: %w", err)
 	}
 
-	// Validate rules
 	for _, rule := range rules {
 		if rule.Identifier == "" {
 			return nil, fmt.Errorf("rule is missing identifier")
@@ -107,31 +101,25 @@ func createRules(ctx context.Context, w http.ResponseWriter, jsonData []byte) ([
 			return nil, fmt.Errorf("rule with identifier %s is missing rule type", rule.Identifier)
 		}
 
-		// Set timestamps
 		now := primitive.NewDateTimeFromTime(time.Now())
 
 		rule.CreationTime = now
 		rule.LastUpdated = now
 
-		// Set MongoDB ID if not already set
 		if rule.ID == "" {
 			rule.ID = primitive.NewObjectID().Hex()
 		}
 	}
 
-	// Update each rule in MongoDB
 	for _, rule := range rules {
-		// Set LastUpdated timestamp
 		now := primitive.NewDateTimeFromTime(time.Now())
 
-		// Convert rule to bson.M to dynamically update only provided fields
 		updateFields := bson.M{}
-		jsonData, _ := json.Marshal(rule)       // Convert struct to JSON
-		json.Unmarshal(jsonData, &updateFields) // Convert JSON to bson.M
+		jsonData, _ := json.Marshal(rule)
+		json.Unmarshal(jsonData, &updateFields)
 
-		updateFields["last_updated"] = now // Always update LastUpdated
+		updateFields["last_updated"] = now
 
-		// Update MongoDB document without removing missing fields
 		filter := bson.M{"_id": rule.Identifier}
 		update := bson.M{"$set": updateFields}
 		opts := options.Update().SetUpsert(true)

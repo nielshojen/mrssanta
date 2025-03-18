@@ -15,3 +15,5 @@ __pycache__/
 # Ignore Git files
 .git
 .gitignore
+
+flask_session

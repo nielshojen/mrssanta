@@ -506,10 +506,3 @@ securityDefinitions:
     type: apiKey
     name: X-API-Key
     in: header
-  azure_auth:
-    type: "oauth2"
-    flow: "implicit"
-    authorizationUrl: "https://login.microsoftonline.com/${ OAUTH_TENANT }/oauth2/v2.0/authorize"
-    x-google-issuer: "https://sts.windows.net/${ OAUTH_TENANT }/"
-    x-google-jwks_uri: "https://login.microsoftonline.com/${ OAUTH_TENANT }/discovery/v2.0/keys"
-    x-google-audiences: "${ OAUTH_CLIENT_ID }"

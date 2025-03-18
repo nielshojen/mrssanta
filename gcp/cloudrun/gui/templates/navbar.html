@@ -1,23 +1,34 @@
-<nav class="navbar sticky-top navbar-expand-lg mb-4" data-bs-theme="dark" style="background-color: #FF0000;">
+  <nav class="navbar sticky-top navbar-expand-lg mb-4" data-bs-theme="dark" style="background-color: #FF0000;">
     <a class="navbar-brand ps-3" href="#">Mrs Santa</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+        <span class="navbar-toggler-icon"></span>
     </button>
-  
+
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item active">
-          <a class="nav-link" href="/">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/devices">Devices</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/rules">Rules</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/events">Events</a>
-        </li>
-      </ul>
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/devices">Devices</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/rules">Rules</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/events">Events</a>
+            </li>
+        </ul>
+
+        <ul class="navbar-nav ms-auto mr-4">
+            {% if session["user"] %}
+                {% if session["user"]["profile_pic"] %}
+                <img src="data:image/png;base64,{{ session['user']['profile_pic'] }}" class="rounded me-2" width="40" height="40" alt="User Profile">
+                {% endif %}
+                <li class="nav-item d-flex align-items-center">
+                  <span class="navbar-text me-3 text-white">{{ session["user"]["name"] }}</span>
+                </li>
+            {% endif %}
+        </ul>
     </div>
   </nav>

@@ -75,15 +75,25 @@
             $.get("/load_devices", { cursor: nextCursor, hostname: hostnameQuery }, function(response) {
                 if (response.data.length > 0) {
                     response.data.forEach(device => {
+                        // Convert client_mode values
+                        let clientModeText = "";
+                        if (device.client_mode === 1) {
+                            clientModeText = "MONITOR";
+                        } else if (device.client_mode === 2) {
+                            clientModeText = "LOCKDOWN";
+                        } else {
+                            clientModeText = device.client_mode || "UNKNOWN"; // Handle unexpected values
+                        }
+
                         let row = `
                             <tr>
                                 <td>${device.hostname || ""}</td>
                                 <td>${device.primary_user || ""}</td>
-                                <td>${device.client_mode || ""}</td>
+                                <td>${clientModeText}</td>  <!-- Updated value -->
                                 <td>${device.santa_version || ""}</td>
                                 <td>${device.os_version || ""}</td>
                                 <td>${device.model_identifier || ""}</td>
-                                <td>${device.scroll || ""}</td>
+                                <td>${device.serial_num || ""}</td>
                                 <td>${device.teamid_rule_count || 0}</td>
                                 <td>${device.signingid_rule_count || 0}</td>
                                 <td>${device.identifier || ""}</td>
@@ -92,12 +102,12 @@
                         `;
                         $("#devicesTableBody").append(row);
                     });
-    
+
                     nextCursor = response.next_cursor;
                 } else {
                     nextCursor = false;
                 }
-    
+
                 $("#loading").hide();
                 loading = false;
             });

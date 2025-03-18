@@ -7,41 +7,41 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	var device Device
 
-	// Extract the API key from the header
 	apiKey := r.Header.Get("X-API-Key")
 
-	// Validate the API key
 	if apiKey != validAPIKey {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, `{"error": "Unauthorized"}`)
 		return
 	}
 
-	// Validate Content-Type
 	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Content-Type header must be application/json", http.StatusBadRequest)
 		return
 	}
 
-	// Extract machine ID from the query parameters
 	machineID := r.URL.Query().Get("machine_id")
 	if machineID == "" {
 		http.Error(w, "Machine ID is missing in the request URL", http.StatusBadRequest)
 		return
 	}
 
-	// Read and decompress request body
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Failed to read request body", http.StatusBadRequest)
 		return
@@ -54,70 +54,62 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Unmarshal JSON into Device struct
 	if err := json.Unmarshal(decompressedData, &device); err != nil {
 		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Get existing device data from Firestore
-	existingDevice, err := getDevice(ctx, machineID)
+	existingDevice, err := getDevice(ctx, client, machineID)
 	if err != nil {
 		http.Error(w, "Error retrieving device", http.StatusInternalServerError)
 		return
 	}
 
-	// Set Identifier to machineID before saving
 	device.Identifier = machineID
 
-	// Determine if a clean sync is needed
-	needsCleanSync := existingDevice == nil || existingDevice.LastCleanSync.IsZero() || time.Since(existingDevice.LastCleanSync) > 24*time.Hour
+	needsCleanSync := existingDevice == nil ||
+		(existingDevice.LastCleanSync.Time().IsZero()) ||
+		time.Since(existingDevice.LastCleanSync.Time()) > 24*time.Hour
 
-	// If the device does not exist, create a new one
 	if existingDevice == nil {
-		device.LastUpdated = time.Now()
-		device.LastCleanSync = time.Now() // Initial clean sync timestamp
-		err = saveDevice(ctx, &device, machineID)
+		device.LastUpdated = primitive.NewDateTimeFromTime(time.Now())
+		device.LastCleanSync = primitive.NewDateTimeFromTime(time.Now())
+		err = saveDevice(ctx, client, &device, machineID)
 		if err != nil {
 			http.Error(w, "Failed to create new device", http.StatusInternalServerError)
 			return
 		}
 	} else {
-		// Keep existing Firestore values where necessary
 		device.ClientMode = existingDevice.ClientMode
-		device.LastUpdated = time.Now()
+		device.LastUpdated = primitive.NewDateTimeFromTime(time.Now())
 		if needsCleanSync {
-			device.LastCleanSync = time.Now()
+			device.LastCleanSync = primitive.NewDateTimeFromTime(time.Now())
 		} else {
 			device.LastCleanSync = existingDevice.LastCleanSync
 		}
 
-		// Save the updated device
-		err = saveDevice(ctx, &device, machineID)
+		err = saveDevice(ctx, client, &device, machineID)
 		if err != nil {
 			http.Error(w, "Failed to update device data", http.StatusInternalServerError)
 			return
 		}
 	}
 
-	// Determine SyncType
 	syncType := "NORMAL"
 	if needsCleanSync {
 		syncType = "CLEAN"
 		log.Printf("Setting CLEAN sync for device %s", machineID)
 	}
 
-	// Prepare response
 	response := Response{
 		BatchSize:             100,
 		FullSyncInterval:      60,
 		ClientMode:            &device.ClientMode,
 		EnableBundles:         true,
-		EnableTransitiveRules: false,
+		EnableTransitiveRules: true,
 		SyncType:              syncType,
 	}
 
-	// Send JSON response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -125,7 +117,6 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// decompressZlib decompresses zlib-compressed data
 func decompressZlib(data []byte) ([]byte, error) {
 	reader, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
@@ -138,4 +129,58 @@ func decompressZlib(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to decompress data: %w", err)
 	}
 	return decompressedData.Bytes(), nil
+}
+
+func saveDevice(ctx context.Context, client *mongo.Client, device *Device, machineID string) error {
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("devices")
+
+	device.ID = machineID
+
+	device.LastUpdated = primitive.NewDateTimeFromTime(time.Now())
+
+	updateData, err := bson.Marshal(device)
+	if err != nil {
+		log.Printf("Failed to convert device to BSON: %v", err)
+		return fmt.Errorf("failed to convert device to BSON: %w", err)
+	}
+
+	var updateMap bson.M
+	err = bson.Unmarshal(updateData, &updateMap)
+	if err != nil {
+		log.Printf("Failed to unmarshal BSON: %v", err)
+		return fmt.Errorf("failed to unmarshal BSON: %w", err)
+	}
+
+	delete(updateMap, "_id")
+
+	_, err = collection.UpdateOne(
+		ctx,
+		bson.M{"_id": machineID},
+		bson.M{"$set": updateMap},
+		options.Update().SetUpsert(true),
+	)
+
+	if err != nil {
+		log.Printf("Failed to save device data: %v", err)
+		return fmt.Errorf("failed to save device data: %w", err)
+	}
+
+	return nil
+}
+
+func getDevice(ctx context.Context, client *mongo.Client, machineID string) (*Device, error) {
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("devices")
+
+	var existingDevice Device
+	err := collection.FindOne(ctx, bson.M{"_id": machineID}).Decode(&existingDevice)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		log.Printf("Failed to retrieve existing device: %v", err)
+		return nil, fmt.Errorf("failed to retrieve existing device: %w", err)
+	}
+
+	return &existingDevice, nil
 }

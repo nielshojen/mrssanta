@@ -10,7 +10,7 @@
 
         <h1 class="text-center fw-bold mb-4">
             Event Details 
-            <button class="btn btn-santa btn-sm me-" onclick="deleteEvent('{{ data.FileSha256 }}')">
+            <button class="btn btn-santa btn-sm me-" onclick="deleteEvent('{{ data.file_sha256 }}')">
                 Delete Event
             </button>
             <button type="button" class="btn btn-santa btn-sm" data-bs-toggle="modal" data-bs-target="#navigationModal">
@@ -30,20 +30,20 @@
                         <div class="mb-3">
                             <label for="evaluationSelect" class="form-label">Evaluation</label>
                             <select id="evaluationSelect" class="form-select">
-                                {% if data.CDHash %}
-                                <option value="CDHASH" data-identifier="{{ data.CDHash }}">CD Hash</option>
+                                {% if data.cdhash %}
+                                <option value="CDHASH" data-identifier="{{ data.cdhash }}">CD Hash</option>
                                 {% endif %}
-                                {% if data.FileSha256 %}
-                                <option value="BINARY" data-identifier="{{ data.FileSha256 }}">Binary</option>
+                                {% if data.file_sha256 %}
+                                <option value="BINARY" data-identifier="{{ data.file_sha256 }}">Binary</option>
                                 {% endif %}
-                                {% if data.SigningID %}
-                                <option value="SIGNINGID" data-identifier="{{ data.SigningID }}">Signing ID</option>
+                                {% if data.signing_id %}
+                                <option value="SIGNINGID" data-identifier="{{ data.signing_id }}">Signing ID</option>
                                 {% endif %}
-                                {% if data.SigningChain and data.SigningChain|length > 0 %}
-                                <option value="CERTIFICATE" data-identifier="{{ data.SigningChain[0].Sha256 }}">Certificate</option>
+                                {% if data.signing_chain and data.signing_chain|length > 0 %}
+                                <option value="CERTIFICATE" data-identifier="{{ data.signing_chain[0].sha256 }}">Certificate</option>
                                 {% endif %}
-                                {% if data.TeamID %}
-                                <option value="TEAMID" data-identifier="{{ data.TeamID }}">Team ID</option>
+                                {% if data.team_id %}
+                                <option value="TEAMID" data-identifier="{{ data.team_id }}">Team ID</option>
                                 {% endif %}
                             </select>
                         </div>
@@ -86,35 +86,35 @@
                         <div class="card mb-3">
                             <div class="card-header text-uppercase fw-bold card-header-santa">Action</div>
                             <div class="card-body">
-                                {% if data.Decision == "ALLOW_BINARY" %}
+                                {% if data.decision == "ALLOW_BINARY" %}
                                 <p class="card-text text-success fw-bold">Allowed to run based on Binary rule</p>
-                                {% elif data.Decision == "ALLOW_CERTIFICATE" %}
+                                {% elif data.decision == "ALLOW_CERTIFICATE" %}
                                 <p class="card-text text-success fw-bold">Allowed to run based on Certificate rule</p>
-                                {% elif data.Decision == "ALLOW_SCOPE" %}
+                                {% elif data.decision == "ALLOW_SCOPE" %}
                                 <p class="card-text text-success fw-bold">Allowed to run based on Configured Scope</p>
-                                {% elif data.Decision == "ALLOW_TEAMID" %}
+                                {% elif data.decision == "ALLOW_TEAMID" %}
                                 <p class="card-text text-success fw-bold">Allowed to run based on Team ID rule</p>
-                                {% elif data.Decision == "ALLOW_SIGNINGID" %}
+                                {% elif data.decision == "ALLOW_SIGNINGID" %}
                                 <p class="card-text text-success fw-bold">Allowed to run based on Signing ID rule</p>
-                                {% elif data.Decision == "ALLOW_CDHASH" %}
+                                {% elif data.decision == "ALLOW_CDHASH" %}
                                 <p class="card-text text-success fw-bold">Allowed to run based on CD Hash rule</p>
-                                {% elif data.Decision == "ALLOW_UNKNOWN" %}
+                                {% elif data.decision == "ALLOW_UNKNOWN" %}
                                 <p class="card-text text-success fw-bold">Allowed to run because no rules blocks or allows it</p>
-                                {% elif data.Decision == "BLOCK_BINARY" %}
+                                {% elif data.decision == "BLOCK_BINARY" %}
                                 <p class="card-text text-santa fw-bold">Blocked based on Binary rule</p>
-                                {% elif data.Decision == "BLOCK_CERTIFICATE" %}
+                                {% elif data.decision == "BLOCK_CERTIFICATE" %}
                                 <p class="card-text text-santa fw-bold">Blocked based on Certificate rule</p>
-                                {% elif data.Decision == "BLOCK_SCOPE" %}
+                                {% elif data.decision == "BLOCK_SCOPE" %}
                                 <p class="card-text text-santa fw-bold">Blocked based on Scope rule</p>
-                                {% elif data.Decision == "BLOCK_TEAMID" %}
+                                {% elif data.decision == "BLOCK_TEAMID" %}
                                 <p class="card-text text-santa fw-bold">Blocked based on Team ID rule</p>
-                                {% elif data.Decision == "BLOCK_SIGNINGID" %}
+                                {% elif data.decision == "BLOCK_SIGNINGID" %}
                                 <p class="card-text text-santa fw-bold">Blocked based on Signing ID rule</p>
-                                {% elif data.Decision == "BLOCK_CDHASH" %}
+                                {% elif data.decision == "BLOCK_CDHASH" %}
                                 <p class="card-text text-santa fw-bold">Blocked based on CD Hash rule</p>
-                                {% elif data.Decision == "BLOCK_UNKNOWN" %}
+                                {% elif data.decision == "BLOCK_UNKNOWN" %}
                                 <p class="card-text text-santa fw-bold">Blocked based as no rule allows it</p>
-                                {% elif data.Decision == "BUNDLE_BINARY" %}
+                                {% elif data.decision == "BUNDLE_BINARY" %}
                                 <p class="card-text">Preemptively reported binary</p>
                                 {% else %}
                                 <p class="card-text">No action taken</p>
@@ -128,21 +128,21 @@
                         <div class="card mb-3">
                             <div class="card-header text-uppercase fw-bold card-header-santa">Virus Total</div>
                             <div class="card-body">
-                                {% if data.VirusTotalResult == 2 %}
+                                {% if data.virustotal_result == 2 %}
                                 <p class="card-text">
                                     <b class="text-danger">Malicious</b>
                                     <button class="btn btn-success btn-sm" id="virusTotalButton">
                                         Details
                                     </button>
                                 </p>
-                                {% elif data.VirusTotalResult == 1 %}
+                                {% elif data.virustotal_result == 1 %}
                                 <p class="card-text">
                                     <b class="text-success">Safe</b>
                                     <button class="btn btn-success btn-sm" id="virusTotalButton">
                                         Details
                                     </button>
                                 </p>
-                                {% elif data.VirusTotalResult == 0 %}
+                                {% elif data.virustotal_result == 0 %}
                                 <p class="card-text">No Scan Available</p>
                                 {% else %}
                                 <p class="card-text">
@@ -162,129 +162,129 @@
                     <div class="card-header text-uppercase fw-bold card-header-santa">Binary Details</div>
                     <div class="card-body text-break">
                         <ol class="list-group">
-                            {% if data.FilePath %}
+                            {% if data.file_path %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Binary Path</div>
-                                    <small class="d-block">{{ data.FilePath }}/{{ data.FileName }}</small>
+                                    <small class="d-block">{{ data.file_path }}/{{ data.file_name }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileSha256 %}
+                            {% if data.file_sha256 %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">SHA-256</div>
-                                    <small class="d-block">{{ data.FileSha256 }}</small>
+                                    <small class="d-block">{{ data.file_sha256 }}</small>
                                 </div>
                             </li>
                             {% endif %}
                         </ol>
                         <br>
                         <ol class="list-group">
-                            {% if data.FileBundleName %}
+                            {% if data.file_bundle_name %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Bundle Name</div>
-                                    <small class="d-block">{{ data.FileBundleName }}</small>
+                                    <small class="d-block">{{ data.file_bundle_name }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleVersion %}
+                            {% if data.file_bundle_version %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Bundle Version</div>
-                                    <small class="d-block">{{ data.FileBundleVersion }}</small>
+                                    <small class="d-block">{{ data.file_bundle_version }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleVersionString %}
+                            {% if data.file_bundle_version_string %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Bundle Version String</div>
-                                    <small class="d-block">{{ data.FileBundleVersionString }}</small>
+                                    <small class="d-block">{{ data.file_bundle_version_string }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleID %}
+                            {% if data.file_bundle_idn_string %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Bundle ID</div>
-                                    <small class="d-block">{{ data.FileBundleID }}</small>
+                                    <small class="d-block">{{ data.file_bundle_idn_string }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundlePath %}
+                            {% if data.file_bundle_path %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Bundle Path</div>
-                                    <small class="d-block">{{ data.FileBundlePath }}</small>
+                                    <small class="d-block">{{ data.file_bundle_path }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleExecutableRelPath %}
+                            {% if data.file_bundle_executable_rel_path %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Bundle Executable Relative Path</div>
-                                    <small class="d-block">{{ data.FileBundleExecutableRelPath }}</small>
+                                    <small class="d-block">{{ data.file_bundle_executable_rel_path }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.ParentName %}
+                            {% if data.parent_name %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Parent Process</div>
-                                    <small class="d-block">{{ data.ParentName }}</small>
+                                    <small class="d-block">{{ data.parent_name }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleHash %}
+                            {% if data.file_bundle_hash %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">File Bundle Hash</div>
-                                    <small class="d-block">{{ data.FileBundleHash }}</small>
+                                    <small class="d-block">{{ data.file_bundle_hash }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleHashMillis %}
+                            {% if data.file_bundle_hash_millis %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">File Bundle Hash Millis</div>
-                                    <small class="d-block">{{ data.FileBundleHashMillis }}</small>
+                                    <small class="d-block">{{ data.file_bundle_hash_millis }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.FileBundleBinaryCount %}
+                            {% if data.file_bundle_binary_count %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">File Bundle Binary Count</div>
-                                    <small class="d-block">{{ data.FileBundleBinaryCount }}</small>
+                                    <small class="d-block">{{ data.file_bundle_binary_count }}</small>
                                 </div>
                             </li>
                             {% endif %}
                         </ol>
                         <br>
                         <ol class="list-group">
-                            {% if data.SigningID %}
+                            {% if data.signing_id %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Signing ID</div>
-                                    <small class="d-block">{{ data.SigningID }}</small>
+                                    <small class="d-block">{{ data.signing_id }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.TeamID %}
+                            {% if data.team_id %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">Team ID</div>
-                                    <small class="d-block">{{ data.TeamID }}</small>
+                                    <small class="d-block">{{ data.team_id }}</small>
                                 </div>
                             </li>
                             {% endif %}
-                            {% if data.CDHash %}
+                            {% if data.cdhash %}
                             <li class="list-group-item d-flex justify-content-between align-items-start">
                                 <div class="ms-2 me-auto">
                                     <div class="fw-bold">CD Hash</div>
-                                    <small class="d-block">{{ data.CDHash }}</small>
+                                    <small class="d-block">{{ data.cdhash }}</small>
                                 </div>
                             </li>
                             {% endif %}
@@ -300,30 +300,27 @@
                         <div class="card mb-3">
                             <div class="card-header text-uppercase fw-bold card-header-santa">Signing Chain</div>
                             <div class="card-body text-break">
-                                {% if data.SignedBy %}
-                                <p class="card-text">Signed By: {{ data.SignedBy }}</p>
+                                {% if data.signingStatus %}
+                                <p class="card-text">Signing Status: {{ data.SigningStatus }}</p>
                                 {% endif %}
-                                {% if data.SigningStatus %}
-                                <p class="card-text">SigningStatus: {{ data.SigningStatus }}</p>
-                                {% endif %}
-                                {% if data.SigningChain %}
+                                {% if data.signing_chain %}
                                 <ol class="list-group list-group-numbered">
-                                {% for i in data.SigningChain %}
+                                {% for i in data.signing_chain %}
                                     <li class="list-group-item d-flex justify-content-between align-items-start">
                                         <div class="ms-2 me-auto">
                                             <div class="fw-bold">{{ i.CN }}</div>
-                                            <small class="d-block">SHA-256: {{ i.Sha256 }}</small>
-                                            <small class="d-block">Organization: {{ i.Org }}</small>
-                                            <small class="d-block">Organizational Unit: {{ i.OU }}</small>
-                                            <small class="d-block">Valid From: {{ i.ValidFrom }}</small>
-                                            <small class="d-block">Valid Until: {{ i.ValidUntil }}</small>
+                                            <small class="d-block">SHA-256: {{ i.sha256 }}</small>
+                                            <small class="d-block">Organization: {{ i.org }}</small>
+                                            <small class="d-block">Organizational Unit: {{ i.ou }}</small>
+                                            <small class="d-block">Valid From: {{ i.valid_from }}</small>
+                                            <small class="d-block">Valid Until: {{ i.valid_until }}</small>
                                         </div>
                                     </li>
                                 {% endfor %}
                                 </ol>
                                 {% endif %}
-                                {% if data.CSFlags %}
-                                <p class="card-text">CSFlags: {{ data.CSFlags }}</p>
+                                {% if data.csFlags %}
+                                <p class="card-text">CS Flags: {{ data.csFlags }}</p>
                                 {% endif %}
                             </div>
                         </div>
@@ -338,7 +335,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         document.getElementById("virusTotalButton").addEventListener("click", function() {
-            let url = "https://www.virustotal.com/gui/file/{{ data.FileSha256 }}";
+            let url = "https://www.virustotal.com/gui/file/{{ data.file_sha256 }}";
             window.open(url, "_blank");
         });
     </script>

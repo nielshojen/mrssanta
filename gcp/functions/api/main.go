@@ -11,16 +11,12 @@ import (
 	"github.com/GoogleCloudPlatform/functions-framework-go/functions"
 )
 
-// var client *firestore.Client
-// var firestoreDatabasePath string
-
 var client *mongo.Client
 
 var validAPIKey = os.Getenv("API_KEY")
 
 func init() {
 	var err error
-	// ctx := context.Background()
 
 	projectID := os.Getenv("GCP_PROJECT")
 	if projectID == "" {
@@ -31,8 +27,6 @@ func init() {
 	if mongoURI == "" {
 		log.Fatal("Missing MONGO_URI environment variable")
 	}
-
-	println("Connecting using URI: ", mongoURI)
 
 	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
 	if err != nil {

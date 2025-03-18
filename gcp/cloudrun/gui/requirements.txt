@@ -1,6 +1,8 @@
 Flask
-gunicorn
+flask-session
+msal
 google-cloud-firestore
+gunicorn
 requests
 pymongo
 dnspython

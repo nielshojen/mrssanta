@@ -21,10 +21,8 @@ type Response struct {
 
 func xsrf(w http.ResponseWriter, r *http.Request) {
 
-	// Extract the API key from the header
 	apiKey := r.Header.Get("X-API-Key")
 
-	// Validate the API key
 	if apiKey != validAPIKey {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprintf(w, `{"error": "Unauthorized"}`)

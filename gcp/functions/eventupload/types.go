@@ -34,8 +34,8 @@ type Event struct {
 	CDHash                      string             `bson:"cdhash,omitempty" json:"cdhash,omitempty"`
 	EntitlementInfo             []EntitlementInfo  `bson:"entitlementInfo,omitempty" json:"entitlementInfo,omitempty"`
 	CSFlags                     int32              `bson:"csFlags,omitempty" json:"csFlags,omitempty"`
-	SigningStatus               string             `bson:"SigningStatus,omitempty" json:"signingStatus,omitempty"`
-	VirusTotalResult            int                `bson:"virustotal_result,omitempty" json:"virustotalresult,omitempty"`
+	SigningStatus               string             `bson:"signingStatus,omitempty" json:"signingStatus,omitempty"`
+	VirusTotalResult            int                `bson:"virustotal_result,omitempty" json:"virustotal_result,omitempty"`
 	CreationTime                primitive.DateTime `bson:"creation_time,omitempty" json:"creation_time,omitempty"`
 	LastUpdated                 primitive.DateTime `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
 	Severity                    string             `json:"severity,omitempty"`                      // For GCP logging output

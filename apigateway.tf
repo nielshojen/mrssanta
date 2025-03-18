@@ -7,8 +7,6 @@ resource "local_file" "api_gateway_config" {
     XSRF_URL = google_cloudfunctions2_function.xsrf.url
     BLOCKABLES_URL = google_cloudfunctions2_function.blockables.url
     API_URL =  google_cloudfunctions2_function.api.url
-    OAUTH_TENANT = var.oauth_tenant
-    OAUTH_CLIENT_ID = var.oauth_client_id
   })
   filename = "${path.module}/gcp/apigateway/openapi.yaml"
 

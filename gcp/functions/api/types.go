@@ -38,8 +38,7 @@ type Device struct {
 	CDHashRuleCount      int                `bson:"cdhash_rule_count,omitempty" json:"cdhash_rule_count,omitempty"`
 	ClientMode           int                `bson:"client_mode,omitempty" json:"client_mode"`
 	RequestCleanSync     bool               `bson:"request_clean_sync,omitempty" json:"request_clean_sync,omitempty"`
-	SyncCursor           string             `bson:"sync_cursor,omitempty" json:"sync_cursor,omitempty"`
-	SyncPage             int                `bson:"sync_page,omitempty" json:"sync_page,omitempty"`
+	NeedsCleanSync       bool               `bson:"needs_clean_sync,omitempty" json:"needs_clean_sync,omitempty"`
 	LastCleanSync        primitive.DateTime `bson:"last_clean_sync,omitempty" json:"last_clean_sync,omitempty"`
 	CreationTime         primitive.DateTime `bson:"creation_time,omitempty" json:"creation_time,omitempty"`
 	LastUpdated          primitive.DateTime `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
@@ -78,7 +77,7 @@ type Event struct {
 	EntitlementInfo             []EntitlementInfo  `bson:"entitlementInfo,omitempty" json:"entitlementInfo,omitempty"`
 	CSFlags                     int32              `bson:"csFlags,omitempty" json:"csFlags,omitempty"`
 	SigningStatus               string             `bson:"SigningStatus,omitempty" json:"signingStatus,omitempty"`
-	VirusTotalResult            int                `bson:"virustotalresult,omitempty" json:"virustotalresult,omitempty"`
+	VirusTotalResult            int                `bson:"virustotal_result,omitempty" json:"virustotal_result,omitempty"`
 	CreationTime                primitive.DateTime `bson:"creation_time,omitempty" json:"creation_time,omitempty"`
 	LastUpdated                 primitive.DateTime `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
 }

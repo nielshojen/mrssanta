@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -75,7 +74,7 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Request from:", machineID)
 	}
 
-	reqBody, err := ioutil.ReadAll(r.Body)
+	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Cannot parse request body: %v\n", err)
 	}
@@ -155,7 +154,7 @@ func saveEvent(ctx context.Context, client *mongo.Client, event Event) (Event, e
 	}
 
 	// Get MongoDB collection
-	collection := client.Database(os.Getenv("DB_COLLECTION")).Collection("events")
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("events")
 
 	// Convert time.Time to primitive.DateTime
 	event.LastUpdated = primitive.NewDateTimeFromTime(time.Now().UTC())

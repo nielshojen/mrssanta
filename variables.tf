@@ -38,14 +38,19 @@ variable "team" {
   description = "The application owner team"
 }
 
-variable "oauth_tenant" {
+variable "msal_tenant_id" {
   type        = string
-  description = "The OAuth Tenant"
+  description = "The MSAL Tenant"
 }
 
-variable "oauth_client_id" {
+variable "msal_client_id" {
   type        = string
-  description = "The OAuth Client ID"
+  description = "The MSAL Client ID"
+}
+
+variable "msal_client_secret" {
+  type        = string
+  description = "The MSAL Client Secret"
 }
 
 variable "service_version" {

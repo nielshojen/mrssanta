@@ -3,35 +3,34 @@ package preflight
 import (
 	"encoding/json"
 	"fmt"
-	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Device represents the data received in the request
 type Device struct {
-	Identifier           string    `firestore:"Identifier" json:"-"`
-	SerialNumber         string    `firestore:"SerialNumber" json:"serial_num"`
-	Hostname             string    `firestore:"Hostname" json:"hostname"`
-	OSVersion            string    `firestore:"OSVersion" json:"os_version"`
-	OSBuild              string    `firestore:"OSBuild" json:"os_build"`
-	ModelIdentifier      string    `firestore:"ModelIdentifier,omitempty" json:"model_identifier,omitempty"`
-	SantaVersion         string    `firestore:"SantaVersion" json:"santa_version"`
-	PrimaryUser          string    `firestore:"PrimaryUser" json:"primary_user"`
-	BinaryRuleCount      int       `firestore:"BinaryRuleCount,omitempty" json:"binary_rule_count,omitempty"`
-	CertificateRuleCount int       `firestore:"CertificateRuleCount,omitempty" json:"certificate_rule_count,omitempty"`
-	CompilerRuleCount    int       `firestore:"CompilerRuleCount,omitempty" json:"compiler_rule_count,omitempty"`
-	TransitiveRuleCount  int       `firestore:"TransitiveRuleCount,omitempty" json:"transitive_rule_count,omitempty"`
-	TeamIDRuleCount      int       `firestore:"TeamIDRuleCount,omitempty" json:"teamid_rule_count,omitempty"`
-	SigningIDRuleCount   int       `firestore:"SigningIDRuleCount,omitempty" json:"signingid_rule_count,omitempty"`
-	CDHashRuleCount      int       `firestore:"CDHashRuleCount,omitempty" json:"cdhash_rule_count,omitempty"`
-	ClientMode           int       `firestore:"ClientMode" json:"-"`
-	RequestCleanSync     bool      `firestore:"RequestCleanSync,omitempty" json:"request_clean_sync,omitempty"`
-	SyncCursor           string    `firestore:"SyncCursor,omitempty" json:"sync_cursor,omitempty"`
-	SyncPage             int       `firestore:"SyncPage,omitempty" json:"sync_page,omitempty"`
-	LastCleanSync        time.Time `firestore:"LastCleanSync,omitempty" json:"last_clean_sync,omitempty"`
-	LastUpdated          time.Time `firestore:"LastUpdated,omitempty" json:"last_updated,omitempty"`
+	ID                   string             `bson:"_id,omitempty" json:"-"`
+	Identifier           string             `bson:"identifier" json:"-"`
+	SerialNumber         string             `bson:"serial_num" json:"serial_num"`
+	Hostname             string             `bson:"hostname" json:"hostname"`
+	OSVersion            string             `bson:"os_version" json:"os_version"`
+	OSBuild              string             `bson:"os_build" json:"os_build"`
+	ModelIdentifier      string             `bson:"model_identifier,omitempty" json:"model_identifier,omitempty"`
+	SantaVersion         string             `bson:"santa_version" json:"santa_version"`
+	PrimaryUser          string             `bson:"primary_user" json:"primary_user"`
+	BinaryRuleCount      int                `bson:"binary_rule_count,omitempty" json:"binary_rule_count,omitempty"`
+	CertificateRuleCount int                `bson:"certificate_rule_count,omitempty" json:"certificate_rule_count,omitempty"`
+	CompilerRuleCount    int                `bson:"compiler_rule_count,omitempty" json:"compiler_rule_count,omitempty"`
+	TransitiveRuleCount  int                `bson:"transitive_rule_count,omitempty" json:"transitive_rule_count,omitempty"`
+	TeamIDRuleCount      int                `bson:"teamid_rule_count,omitempty" json:"teamid_rule_count,omitempty"`
+	SigningIDRuleCount   int                `bson:"signingid_rule_count,omitempty" json:"signingid_rule_count,omitempty"`
+	CDHashRuleCount      int                `bson:"cdhash_rule_count,omitempty" json:"cdhash_rule_count,omitempty"`
+	ClientMode           int                `bson:"client_mode" json:"-"`
+	RequestCleanSync     bool               `bson:"request_clean_sync,omitempty" json:"request_clean_sync,omitempty"`
+	NeedsCleanSync       bool               `bson:"needs_clean_sync,omitempty" json:"needs_clean_sync,omitempty"`
+	LastCleanSync        primitive.DateTime `bson:"last_clean_sync,omitempty" json:"last_clean_sync,omitempty"`
+	LastUpdated          primitive.DateTime `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
 }
 
-// PreflightResponse represents the response to a preflight request
 type Response struct {
 	EnableBundles            bool   `json:"enable_bundles,omitempty"`
 	EnableTransitiveRules    bool   `json:"enable_transitive_rules,omitempty"`
@@ -46,9 +45,8 @@ type Response struct {
 	OverrideFileAccessAction string `json:"override_file_access_action,omitempty"`
 }
 
-// Custom unmarshaling to handle ClientMode as a string
 func (d *Device) UnmarshalJSON(data []byte) error {
-	type Alias Device // Avoid recursion
+	type Alias Device
 	aux := &struct {
 		ClientMode string `json:"client_mode"`
 		*Alias
@@ -56,12 +54,10 @@ func (d *Device) UnmarshalJSON(data []byte) error {
 		Alias: (*Alias)(d),
 	}
 
-	// Unmarshal JSON into the auxiliary struct
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
 
-	// Translate the string client_mode into an integer
 	switch aux.ClientMode {
 	case "MONITOR":
 		d.ClientMode = 1

@@ -83,3 +83,61 @@ resource "google_secret_manager_secret_iam_binding" "mongodb_uri" {
   role      = "roles/secretmanager.secretAccessor"
   members   = ["serviceAccount:${google_service_account.account.email}"]
 }
+
+# MSAL Client ID
+resource "google_secret_manager_secret" "msal_client_id" {
+  secret_id = "${var.service}-msal-client-id"
+
+  labels = "${merge(var.labels, {
+      app     = "${var.service}",
+      service = "${var.service}",
+      env     = "prod",
+  })}"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
+resource "google_secret_manager_secret_version" "msal_client_id" {
+  secret      = google_secret_manager_secret.msal_client_id.id
+  secret_data = var.msal_client_id
+}
+
+resource "google_secret_manager_secret_iam_binding" "msal_client_id" {
+
+  secret_id = google_secret_manager_secret.msal_client_id.id
+  role      = "roles/secretmanager.secretAccessor"
+  members   = ["serviceAccount:${google_service_account.account.email}"]
+}
+
+# MSAL Client Secret
+resource "google_secret_manager_secret" "msal_client_secret" {
+  secret_id = "${var.service}-msal-client-secret"
+
+  labels = "${merge(var.labels, {
+      app     = "${var.service}",
+      service = "${var.service}",
+      env     = "prod",
+  })}"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.secretmanager]
+}
+
+resource "google_secret_manager_secret_version" "msal_client_secret" {
+  secret      = google_secret_manager_secret.msal_client_secret.id
+  secret_data = var.msal_client_secret
+}
+
+resource "google_secret_manager_secret_iam_binding" "msal_client_secret" {
+
+  secret_id = google_secret_manager_secret.msal_client_secret.id
+  role      = "roles/secretmanager.secretAccessor"
+  members   = ["serviceAccount:${google_service_account.account.email}"]
+}

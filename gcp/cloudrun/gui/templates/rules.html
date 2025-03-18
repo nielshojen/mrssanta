@@ -15,7 +15,73 @@
 {% endblock %}
 
 {% block content %}
-    <h1 class="text-center fw-bold mb-4">Rules</h1>
+
+    <h1 class="text-center fw-bold mb-4">
+        Rules
+        <button type="button" class="btn btn-santa btn-sm" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+            New Rule
+        </button>
+    </h1>
+
+    <!-- Create New Rule Modal -->
+    <div class="modal fade" id="createRuleModal" tabindex="-1" aria-labelledby="createRuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="createRuleForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createRuleModalLabel">Create New Rule</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Identifier</label>
+                            <input type="text" class="form-control" id="new_identifier" name="identifier" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Policy</label>
+                            <select class="form-select" id="new_policy" name="action">
+                                <option value="ALLOWLIST" selected>Allow</option>
+                                <option value="ALLOWLIST_COMPILER">Allow Compiler</option>
+                                <option value="BLOCKLIST">Block</option>
+                                <option value="SILENT_BLOCKLIST">Silent Block</option>
+                                <option value="REMOVE">Remove</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Rule Type</label>
+                            <select class="form-select" id="new_rule_type" name="evaluation">
+                                <option value="BINARY">Binary</option>
+                                <option value="CERTIFICATE">Certificate</option>
+                                <option value="TEAMID">Team ID</option>
+                                <option value="SIGNINGID">Signing ID</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Scope</label>
+                            <select class="form-select" id="new_scope" name="scope">
+                                <option value="global">Global</option>
+                                <option value="munki">Munki</option>
+                                <option value="machine">Machine</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Custom Message</label>
+                            <input type="text" class="form-control" id="new_custom_message" name="custom_message">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Create Rule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Search & Filters -->
     <div class="row mb-3">
@@ -39,8 +105,10 @@
             <label for="policyFilter">Filter by Policy</label>
             <select id="policyFilter" class="form-select">
                 <option value="">All</option>
-                <option value="ALLOWLIST">Allow</option>
+                <option value="ALLOWLIST" selected>Allow</option>
+                <option value="ALLOWLIST_COMPILER">Allow Compiler</option>
                 <option value="BLOCKLIST">Block</option>
+                <option value="SILENT_BLOCKLIST">Silent Block</option>
                 <option value="REMOVE">Remove</option>
             </select>
         </div>
@@ -60,11 +128,12 @@
             <thead>
                 <tr>
                     <th>Identifier</th>
-                    <th>CustomMessage</th>
-                    <th>RuleType</th>
+                    <th>Custom Message</th>
+                    <th>Rule Type</th>
                     <th>Policy</th>
                     <th>Scope</th>
                     <th>Assigned</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="rulesTableBody">
@@ -74,6 +143,68 @@
     </div>
 
     <div id="loading">Loading more rules...</div>
+
+    <!-- Edit Rule -->
+    <div class="modal fade" id="editRuleModal" tabindex="-1" aria-labelledby="editRuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editRuleForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editRuleModalLabel">Edit Rule</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="ruleId" name="identifier">
+
+                        <div class="mb-3">
+                            <label class="form-label">Identifier</label>
+                            <input type="text" class="form-control" id="identifier" name="identifier" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Policy</label>
+                            <select class="form-select" id="policy" name="action">
+                                <option value="ALLOWLIST" selected>Allow</option>
+                                <option value="ALLOWLIST_COMPILER">Allow Compiler</option>
+                                <option value="BLOCKLIST">Block</option>
+                                <option value="SILENT_BLOCKLIST">Silent Block</option>
+                                <option value="REMOVE">Remove</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Rule Type</label>
+                            <select class="form-select" id="rule_type" name="evaluation">
+                                <option value="BINARY">Binary</option>
+                                <option value="CERTIFICATE">Certificate</option>
+                                <option value="TEAMID">Team ID</option>
+                                <option value="SIGNINGID">Signing ID</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Scope</label>
+                            <select class="form-select" id="scope" name="scope">
+                                <option value="global">Global</option>
+                                <option value="munki">Munki</option>
+                                <option value="machine">Machine</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Custom Message</label>
+                            <input type="text" class="form-control" id="custom_message" name="custom_message">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block content_scripts %}
@@ -113,6 +244,11 @@
                                 <td>${rule.policy || ""}</td>
                                 <td>${rule.scope || ""}</td>
                                 <td>${rule.assigned ? rule.assigned.length : 0}</td>
+                                <td>
+                                    <button class="btn btn-primary edit-rule-btn" data-bs-toggle="modal" data-bs-target="#editRuleModal" data-id="${rule.id}">
+                                        Edit
+                                    </button>
+                                </td>
                             </tr>
                         `;
                         $("#rulesTableBody").append(row);
@@ -147,6 +283,69 @@
                 selectedPolicy = $("#policyFilter").val();
                 selectedScope = $("#scopeFilter").val();
                 loadRules(true);
+            });
+
+            $("#rulesTableBody").on("click", ".edit-rule-btn", function(){
+                let ruleId = $(this).data("id");
+
+                $.getJSON(`/rules/${ruleId}`, function(data) {
+                    $("#ruleId").val(data._id);
+                    $("#identifier").val(data.identifier || "");
+                    $("#policy").val(data.policy || "ALLOWLIST");
+                    $("#rule_type").val(data.rule_type || "BINARY");
+                    $("#scope").val(data.scope || "global");
+                    $("#custom_message").val(data.custom_msg || "");
+                });
+            });
+
+            $("#editRuleForm").submit(function(event){
+                event.preventDefault();
+                
+                $.ajax({
+                    url: "/save_rule",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        evaluation: $("#rule_type").val(),
+                        identifier: $("#identifier").val(),
+                        action: $("#policy").val(),
+                        scope: $("#scope").val(),
+                        custom_message: $("#custom_message").val()
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        $("#editRuleModal").modal("hide");
+                        location.reload();  // Reload the page to update the table
+                    },
+                    error: function(xhr) {
+                        alert("Failed to update rule: " + xhr.responseText);
+                    }
+                });
+            });
+
+            $("#createRuleForm").submit(function(event){
+                event.preventDefault();
+                
+                $.ajax({
+                    url: "/save_rule",  // Use the same endpoint as editing
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        evaluation: $("#new_rule_type").val(),
+                        identifier: $("#new_identifier").val(),
+                        action: $("#new_policy").val(),
+                        scope: $("#new_scope").val(),
+                        custom_message: $("#new_custom_message").val()
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        $("#createRuleModal").modal("hide");
+                        location.reload();  // Reload the table to show the new rule
+                    },
+                    error: function(xhr) {
+                        alert("Failed to create rule: " + xhr.responseText);
+                    }
+                });
             });
         });
     </script>
