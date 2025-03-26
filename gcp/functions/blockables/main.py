@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pymongo import MongoClient
 
 vt_api_key = os.environ.get('VT_API_KEY')
-vote_threshold = os.environ.get('VOTE_THRESHOLD')
+vote_threshold = int(os.environ.get('VOTE_THRESHOLD'))
 
 # MongoDB connection
 MONGO_URI = os.environ.get("MONGO_URI")
@@ -63,10 +63,10 @@ def get_binary(identifier):
     binary = collection.find_one({"_id": identifier})
 
     if binary:
-        if "VirusTotalResult" not in binary or binary["VirusTotalResult"] == 0:
+        if "virustotal_result" not in binary or binary["virustotal_result"] == 0:
             virustotalresult = get_vt_result(binary.get("file_sha256"))
             if virustotalresult is not None:
-                binary["VirusTotalResult"] = virustotalresult
+                binary["virustotal_result"] = virustotalresult
                 save_binary(identifier, binary)
         return binary
     else:
@@ -76,7 +76,7 @@ def save_binary(identifier, data):
     """Saves or updates a binary document in MongoDB."""
     collection = db["events"]
 
-    data["LastUpdated"] = datetime.now(timezone.utc)
+    data["last_updated"] = datetime.now(timezone.utc)
 
     collection.update_one(
         {"_id": identifier},
@@ -98,11 +98,16 @@ def save_rule(identifier, data):
     """Saves or updates a rule document in MongoDB."""
     collection = db["rules"]
 
-    data["LastUpdated"] = datetime.now(timezone.utc)
+    data["last_updated"] = datetime.now(timezone.utc)
+
+    update_ops = {"$set": data}
+
+    if "assigned" not in data:
+        update_ops["$unset"] = {"assigned": ""}
 
     collection.update_one(
         {"_id": identifier},
-        {"$set": data},
+        update_ops,
         upsert=True
     )
 
@@ -133,7 +138,6 @@ def blockables(request):
             ruletype = data['ruletype']
             ruleid = data['ruleid']
             rule = get_rule(ruleid)
-            print('rule: %s' % rule)
             if rule == None:
                 rule = {}
                 assigned = []
@@ -143,32 +147,26 @@ def blockables(request):
                 rule['rule_type'] = ruletype
                 rule['policy'] = 'ALLOWLIST'
                 rule['assigned'] = assigned
-                print('New Rule: %s' % rule)
                 save_rule(ruleid, rule)
             else:
                 if 'assigned' in rule:
                     assigned = rule['assigned']
                     if not identifier in assigned:
-                        print('Adding %s to assigned' % identifier)
                         assigned.append(identifier)
-                        print(assigned)
                         rule['assigned'] = assigned
                         save_rule(ruleid, rule)
-                    else:
-                        print('Already assigned')
                 else:
                     assigned = []
                     assigned.append(identifier)
                     rule['assigned'] = assigned
                     save_rule(ruleid, rule)
-            return jsonify({"success": True, "message": "Rule added successfully!"}), 200
+            return jsonify({"success": True, "message": "Rule added successfully! Rule will be applied within a minute"}), 200
         elif data['action'] == "machine":
             identifier = data['identifier']
             scope = data['scope']
             ruletype = data['ruletype']
             ruleid = data['ruleid']
             rule = get_rule(ruleid)
-            print('rule: %s' % rule)
             if rule == None:
                 rule = {}
                 assigned = []
@@ -178,37 +176,32 @@ def blockables(request):
                 rule['rule_type'] = ruletype
                 rule['policy'] = 'ALLOWLIST'
                 rule['assigned'] = assigned
-                print('New Rule: %s' % rule)
                 save_rule(ruleid, rule)
             else:
                 if 'assigned' in rule:
                     assigned = rule['assigned']
                     if not identifier in assigned:
-                        print('Adding %s to assigned' % identifier)
                         assigned.append(identifier)
                         if len(assigned) >= vote_threshold:
-                            print("Converting rule to global")
                             rule['scope'] = 'global'
+                            rule['custom_msg'] = 'Converted to global rule'
+                            rule['voted'] = True
                             rule.pop("assigned")
                         else:
-                            print('Assigned count has not yet reached %s' % vote_threshold)
                             rule['assigned'] = assigned
                         save_rule(ruleid, rule)
-                    else:
-                        print('Already assigned')
                 else:
                     assigned = []
                     assigned.append(identifier)
                     rule['assigned'] = assigned
                     save_rule(ruleid, rule)
-            return jsonify({"success": True, "message": "Rule added successfully!"}), 200
+            return jsonify({"success": True, "message": "Rule added successfully! Rule will be applied within a minute"}), 200
         elif data['action'] == "managedapp":
             identifier = data['identifier']
             scope = data['scope']
             ruletype = data['ruletype']
             ruleid = data['ruleid']
             rule = get_rule(ruleid)
-            print('rule: %s' % rule)
             if rule == None:
                 rule = {}
                 assigned = []
@@ -218,19 +211,14 @@ def blockables(request):
                 rule['rule_type'] = ruletype
                 rule['policy'] = 'ALLOWLIST'
                 rule['assigned'] = assigned
-                print('New Rule: %s' % rule)
                 save_rule(ruleid, rule)
             else:
                 if 'assigned' in rule:
                     assigned = rule['assigned']
                     if not identifier in assigned:
-                        print('Adding %s to assigned' % identifier)
                         assigned.append(identifier)
-                        print(assigned)
                         rule['assigned'] = assigned
                         save_rule(ruleid, rule)
-                    else:
-                        print('Already assigned')
                 else:
                     assigned = []
                     assigned.append(identifier)
@@ -297,15 +285,15 @@ def blockables(request):
                     rule = {}
 
                     if 'signing_id' in binary and binary['signing_id']:
-                        rule['Identifier'] = binary['signing_id']
+                        rule['identifier'] = binary['signing_id']
                         rule['rule_type'] = 'SIGNINGID'
 
                     elif 'team_id' in binary and binary['team_id']:
-                        rule['Identifier'] = binary['team_id']
+                        rule['identifier'] = binary['team_id']
                         rule['rule_type'] = 'TEAMID'
 
                     elif 'file_sha256' in binary and binary['file_sha256']:
-                        rule['Identifier'] = binary['file_sha256']
+                        rule['identifier'] = binary['file_sha256']
                         rule['rule_type'] = 'BINARY'
                     
                     response['rule'] = rule
