@@ -22,9 +22,9 @@ Deployment shouldn't take more than 15-20 mins.
 
 ### Current status
 
-We have a very basic rule syncing in place. Still need to do management API, more complex rule assignment and Web UI.
+We have a very basic rule syncing in place.
 
-Will be looking into making it work on Azure as well at some point
+Right now we only run on GCP. We will be making it work on Azure as well at some point
 
 ### What's with the stupid name
 
