@@ -12,7 +12,7 @@ Santa sync server inspired by projects like Rudolph and Moroz
 
 ### What is it
 
-It's a collection of golang and python scripts running in Google Cloud Funtions behind an API Gateway. Data is persisted in a Firebase DB. If a custom domain is preferable, s load balancer is spun up as well.
+It's a collection of golang and python scripts running in Google Cloud Funtions behind an API Gateway. Data is persisted in a MongoDB. If a custom domain is preferable, s load balancer is spun up as well.
 
 Theoretically is should scale like crazy without breaking a sweat, but our Mac fleet is fairly small so i couldn't speak to the validity of that. Scaling does happen automatically and that part is completely hands off.
 
