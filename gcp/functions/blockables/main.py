@@ -7,6 +7,7 @@ from urllib.parse import unquote
 from datetime import datetime, timezone
 from pymongo import MongoClient
 
+organization = os.environ.get('ORGANIZATION', 'this Organization')
 vt_api_key = os.environ.get('VT_API_KEY')
 vote_threshold = int(os.environ.get('VOTE_THRESHOLD'))
 
@@ -244,6 +245,8 @@ def blockables(request):
             return send_from_directory(STATIC_FOLDER, filename)
     
         response = {}
+        
+        response['organization'] = organization
 
         api_key = os.getenv("API_KEY")
         if api_key:

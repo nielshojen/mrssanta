@@ -58,10 +58,18 @@ variable "service_version" {
   description = "Service version"
   default = "0.1"
 }
-
 variable "virustotal_api_key" {
   type        = string
   description = "VirusTotal API Key"
+}
+variable "vote_threshold" {
+  type        = string
+  description = "Vote Threshold for chaning rules to global"
+}
+
+variable "organization" {
+  type        = string
+  description = "Organization name"
 }
 
 variable "support_email" {

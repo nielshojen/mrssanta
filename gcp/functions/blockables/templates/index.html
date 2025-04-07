@@ -174,7 +174,7 @@
               {% if response.rule.custom_msg %}
               <p class="card-text">{{ response.rule.custom_msg }}</p>
               {% else %}
-              <p class="card-text">{{ response.binary.file_name }} is blocked by BESTSELLER and is not allowed to run</p>
+              <p class="card-text">{{ response.binary.file_name }} is blocked by {{ response.organization }} and is not allowed to run</p>
               {% endif %}
             </div>
         </div>
@@ -212,7 +212,7 @@
             </div>
             <div class="card-body">
               {% if response.binary.virustotal_result == 2 %}
-              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
+              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-success">Malicious</b></p>
               {% else %}
               <p class="card-text">Do you want to allow <b>{{ response.binary.file_name }}</b> to run on your Mac (<b>{{ response.device.hostname.split(".")[0] }}</b>)?</p>
               <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow">Allow</button>
@@ -234,7 +234,7 @@
             </div>
             <div class="card-body">
               {% if response.binary.virustotal_result == 2 %}
-              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a BESTSELLER Mac, as it is found to be <b class="text-success">Malicious</b></p>
+              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-success">Malicious</b></p>
               {% else %}
               <p class="card-text">Do you want to allow <b>{{ response.binary.file_name }}</b> to run on your Mac (<b>{{ response.device.hostname.split(".")[0] }}</b>)?</p>
               <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow">Allow</button>

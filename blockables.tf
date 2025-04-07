@@ -31,7 +31,8 @@ resource "google_cloudfunctions2_function" "blockables" {
     available_memory    = "256M"
     timeout_seconds     = 60
     environment_variables = {
-      VOTE_THRESHOLD = "5"
+      ORGANIZATION  = var.organization
+      VOTE_THRESHOLD = var.vote_threshold
       LOG_EXECUTION_ID = "true"
       GCP_PROJECT = var.project_id
       MONGO_DB = var.service
