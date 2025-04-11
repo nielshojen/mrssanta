@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,6 +20,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+var fileNamePrefixes = []string{
+	"terraform-provider",
+}
 
 func sanitizeEvent(event Event) Event {
 	sanitized := event
@@ -148,36 +153,29 @@ func decompressZlib(data []byte) ([]byte, error) {
 }
 
 func saveEvent(ctx context.Context, client *mongo.Client, event Event) (Event, error) {
-	// Check if FileSha256 field exists
 	if event.FileSha256 == "" {
 		return Event{}, errors.New("no file_sha256 field in the event")
 	}
 
-	// Get MongoDB collection
 	collection := client.Database(os.Getenv("MONGO_DB")).Collection("events")
 
-	// Convert time.Time to primitive.DateTime
 	event.LastUpdated = primitive.NewDateTimeFromTime(time.Now().UTC())
 
-	// Set `_id` to `FileSha256`
 	event.ID = event.FileSha256
 
-	// Convert event struct to BSON (excluding `_id` to prevent modification errors)
 	updateData, err := bson.Marshal(event)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to convert event to BSON: %v", err)
 	}
 
-	// Convert BSON to map to avoid modifying `_id`
 	var updateMap bson.M
 	err = bson.Unmarshal(updateData, &updateMap)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to unmarshal BSON: %v", err)
 	}
 
-	delete(updateMap, "_id") // Ensure `_id` is not updated
+	delete(updateMap, "_id")
 
-	// Perform upsert (insert if not exists, update if exists)
 	_, err = collection.UpdateOne(
 		ctx,
 		bson.M{"_id": event.ID},   // Match by `_id`
@@ -190,4 +188,71 @@ func saveEvent(ctx context.Context, client *mongo.Client, event Event) (Event, e
 	}
 
 	return event, nil
+}
+
+func (e *Event) CheckFileNamePrefix(ctx context.Context, client *mongo.Client) {
+	for _, preset := range fileNamePrefixes {
+		if strings.HasPrefix(strings.ToLower(e.FileName), strings.ToLower(preset)) {
+			rule := CreateRule(*e)
+			if rule != nil {
+				_, err := saveRule(ctx, client, *rule)
+				if err != nil {
+					log.Printf("Failed to save rule: %v", err)
+				} else {
+					log.Printf("Rule created for CDHash: %s", e.CDHash)
+				}
+			}
+			return
+		}
+	}
+}
+
+func CreateRule(event Event) *Rule {
+	now := primitive.NewDateTimeFromTime(time.Now())
+	return &Rule{
+		Identifier:    event.CDHash,
+		Policy:        "ALLOWLIST",
+		RuleType:      "CDHASH",
+		CustomMessage: fmt.Sprintf("Allow %s", event.FileName),
+		Scope:         "global",
+		CreationTime:  now,
+		LastUpdated:   now,
+	}
+}
+
+func saveRule(ctx context.Context, client *mongo.Client, rule Rule) (Rule, error) {
+	if rule.Identifier == "" {
+		return Rule{}, errors.New("missing Identifier in rule")
+	}
+
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
+
+	rule.LastUpdated = primitive.NewDateTimeFromTime(time.Now().UTC())
+
+	rule.ID = rule.Identifier
+
+	updateData, err := bson.Marshal(rule)
+	if err != nil {
+		return Rule{}, fmt.Errorf("failed to convert rule to BSON: %v", err)
+	}
+
+	var updateMap bson.M
+	err = bson.Unmarshal(updateData, &updateMap)
+	if err != nil {
+		return Rule{}, fmt.Errorf("failed to unmarshal BSON: %v", err)
+	}
+
+	delete(updateMap, "_id")
+
+	_, err = collection.UpdateOne(
+		ctx,
+		bson.M{"_id": rule.ID},
+		bson.M{"$set": updateMap},
+		options.Update().SetUpsert(true),
+	)
+	if err != nil {
+		return Rule{}, fmt.Errorf("failed to store rule in MongoDB: %v", err)
+	}
+
+	return rule, nil
 }
