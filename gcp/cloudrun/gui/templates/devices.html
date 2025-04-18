@@ -34,16 +34,20 @@
             <thead>
                 <tr>
                     <th>Hostname</th>
-                    <th>PrimaryUser</th>
-                    <th>ClientMode</th>
-                    <th>SantaVersion</th>
-                    <th>OSVersion</th>
-                    <th>ModelIdentifier</th>
-                    <th>SerialNumber</th>
-                    <th>TeamIDRuleCount</th>
-                    <th>SigningIDRuleCount</th>
-                    <th>Identifier</th>
-                    <th>LastUpdated</th>
+                    <th>Username</th>
+                    <th>Mode</th>
+                    <th>Santa Version</th>
+                    <th>OS Version</th>
+                    <th>Model Identifier</th>
+                    <th>Serialnumber</th>
+                    <th>Binary Rules</th>
+                    <th>Certificate Rules</th>
+                    <th>Team ID Rules</th>
+                    <th>Signing ID Rules</th>
+                    <th>CDHash Rules</th>
+                    <th>Compiler Rules</th>
+                    <th>Device Identifier</th>
+                    <th>Last Updated</th>
                 </tr>
             </thead>
             <tbody id="devicesTableBody">
@@ -87,15 +91,19 @@
 
                         let row = `
                             <tr>
-                                <td>${device.hostname || ""}</td>
+                                <td>${device.hostname.split('.')[0] || ""}</td>
                                 <td>${device.primary_user || ""}</td>
                                 <td>${clientModeText}</td>  <!-- Updated value -->
                                 <td>${device.santa_version || ""}</td>
                                 <td>${device.os_version || ""}</td>
                                 <td>${device.model_identifier || ""}</td>
                                 <td>${device.serial_num || ""}</td>
+                                <td>${device.binary_rule_count || 0}</td>
+                                <td>${device.certificate_rule_count || 0}</td>
                                 <td>${device.teamid_rule_count || 0}</td>
                                 <td>${device.signingid_rule_count || 0}</td>
+                                <td>${device.cdhash_rule_count || 0}</td>
+                                <td>${device.compiler_rule_count || 0}</td>
                                 <td>${device.identifier || ""}</td>
                                 <td>${device.last_updated || ""}</td>
                             </tr>
