@@ -4,6 +4,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type Request struct {
+	Cursor string `json:"cursor,omitempty"`
+}
+
 type Rule struct {
 	ID                    string             `bson:"_id,omitempty" json:"-"`
 	Identifier            string             `bson:"identifier,omitempty" json:"identifier"`
