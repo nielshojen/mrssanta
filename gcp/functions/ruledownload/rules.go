@@ -18,10 +18,7 @@ import (
 
 func getGlobalRules(ctx context.Context, client *mongo.Client) ([]*Rule, error) {
 	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
-
-	filter := bson.M{"scope": "global"}
-
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := collection.Find(ctx, bson.M{"scope": "global"})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rules: %v", err)
 	}
@@ -35,23 +32,12 @@ func getGlobalRules(ctx context.Context, client *mongo.Client) ([]*Rule, error) 
 		}
 		rules = append(rules, &r)
 	}
-
-	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("cursor error: %v", err)
-	}
-
-	return rules, nil
+	return rules, cursor.Err()
 }
 
 func getMunkiRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
 	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
-
-	filter := bson.M{
-		"scope":    "managedapp",
-		"assigned": ID,
-	}
-
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := collection.Find(ctx, bson.M{"scope": "managedapp", "assigned": ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rules: %v", err)
 	}
@@ -65,23 +51,12 @@ func getMunkiRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rul
 		}
 		rules = append(rules, &r)
 	}
-
-	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("cursor error: %v", err)
-	}
-
-	return rules, nil
+	return rules, cursor.Err()
 }
 
 func getMachineRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
 	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
-
-	filter := bson.M{
-		"scope":    "machine",
-		"assigned": ID,
-	}
-
-	cursor, err := collection.Find(ctx, filter)
+	cursor, err := collection.Find(ctx, bson.M{"scope": "machine", "assigned": ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rules: %v", err)
 	}
@@ -95,12 +70,7 @@ func getMachineRules(ctx context.Context, client *mongo.Client, ID string) ([]*R
 		}
 		rules = append(rules, &r)
 	}
-
-	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("cursor error: %v", err)
-	}
-
-	return rules, nil
+	return rules, cursor.Err()
 }
 
 func encodeCursor(cursor CursorMetadata) string {
@@ -118,8 +88,7 @@ func decodeCursor(cursorStr string) (CursorMetadata, error) {
 	return cursor, err
 }
 
-func paginateRules(rules []*Rule, r *http.Request) ([]*Rule, string) {
-	cursorStr := r.URL.Query().Get("cursor")
+func paginateRules(rules []*Rule, cursorStr string) ([]*Rule, string) {
 	startIndex := 0
 
 	if cursorStr != "" {
@@ -152,14 +121,11 @@ func paginateRules(rules []*Rule, r *http.Request) ([]*Rule, string) {
 
 func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-	var reponse Response
-	var rules []*Rule
+	var request Request
 
 	apiKey := r.Header.Get("X-API-Key")
-
 	if apiKey != validAPIKey {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprintf(w, `{"error": "Unauthorized"}`)
+		http.Error(w, `{"error": "Unauthorized"}`, http.StatusUnauthorized)
 		return
 	}
 
@@ -177,7 +143,9 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Cannot parse request body: %v\n", err)
+		log.Printf("Cannot read request body: %v\n", err)
+		http.Error(w, "Failed to read body", http.StatusBadRequest)
+		return
 	}
 	defer r.Body.Close()
 
@@ -188,44 +156,47 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.Unmarshal(decompressedData, &reponse); err != nil {
-		log.Printf("Failed to decode JSON from decompressed data: %v", err)
+	if err := json.Unmarshal(decompressedData, &request); err != nil {
+		log.Printf("Failed to decode JSON: %v", err)
 		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
 		return
 	}
 
-	globalrules, err := getGlobalRules(ctx, client)
-	if err != nil {
+	log.Printf("Incoming cursor: %s", request.Cursor)
+
+	var rules []*Rule
+
+	if globalrules, err := getGlobalRules(ctx, client); err == nil {
+		rules = append(rules, globalrules...)
+	} else {
 		http.Error(w, fmt.Sprintf("Failed to get global rules: %v", err), http.StatusInternalServerError)
 		return
 	}
-	rules = append(rules, globalrules...)
 
-	managedapprules, err := getMunkiRules(ctx, client, machineID)
-	if err != nil {
+	if managedapprules, err := getMunkiRules(ctx, client, machineID); err == nil {
+		rules = append(rules, managedapprules...)
+	} else {
 		http.Error(w, fmt.Sprintf("Failed to get managedapp rules: %v", err), http.StatusInternalServerError)
 		return
 	}
-	rules = append(rules, managedapprules...)
 
-	machinerules, err := getMachineRules(ctx, client, machineID)
-	if err != nil {
+	if machinerules, err := getMachineRules(ctx, client, machineID); err == nil {
+		rules = append(rules, machinerules...)
+	} else {
 		http.Error(w, fmt.Sprintf("Failed to get machine rules: %v", err), http.StatusInternalServerError)
 		return
 	}
-	rules = append(rules, machinerules...)
 
-	paginatedRules, cursor := paginateRules(rules, r)
+	paginatedRules, cursor := paginateRules(rules, request.Cursor)
 
-	responseData := map[string]interface{}{
-		"rules": paginatedRules,
+	log.Printf("Outgoing cursor: %s", cursor)
+
+	response := Response{
+		Rules:  paginatedRules,
+		Cursor: cursor,
 	}
 
-	if cursor != "" {
-		responseData["cursor"] = cursor
-	}
-
-	responseJSON, err := json.Marshal(responseData)
+	responseJSON, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "Failed to encode response JSON", http.StatusInternalServerError)
 		return

@@ -114,6 +114,9 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 
 		sanitizedEvent := sanitizeEvent(event)
 
+
+		sanitizedEvent.CheckFileNamePrefix(ctx, client)
+
 		// Check if the Decision is in the skip list
 		if !skipDecisions[sanitizedEvent.Decision] {
 			_, err = saveEvent(ctx, client, sanitizedEvent)
@@ -178,8 +181,8 @@ func saveEvent(ctx context.Context, client *mongo.Client, event Event) (Event, e
 
 	_, err = collection.UpdateOne(
 		ctx,
-		bson.M{"_id": event.ID},   // Match by `_id`
-		bson.M{"$set": updateMap}, // Dynamically update all fields
+		bson.M{"_id": event.ID},
+		bson.M{"$set": updateMap},
 		options.Update().SetUpsert(true),
 	)
 
