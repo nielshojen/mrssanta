@@ -237,7 +237,7 @@
               <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-success">Malicious</b></p>
               {% else %}
               <p class="card-text">Do you want to allow <b>{{ response.binary.file_name }}</b> to run on your Mac (<b>{{ response.device.hostname.split(".")[0] }}</b>)?</p>
-              <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow">Allow</button>
+              <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow-new">Allow</button>
               <button type="button" class="btn btn-outline-danger btn-sm" type="submit" value="report" id="report">Report as Malware</button>
               {% endif %}
             </div>
