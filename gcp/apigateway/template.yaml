@@ -100,29 +100,6 @@ paths:
       responses:
         200:
           description: "Successful response"
-  /santa/xsrf/{machine_id}:
-    post:
-      summary: "Handle xsrf requests"
-      operationId:  xsrf
-      x-google-backend:
-        address: ${ XSRF_URL }
-      parameters:
-        - name: machine_id
-          in: path
-          required: true
-          type: string
-          description: "ID of the device"
-        - name: body
-          in: body
-          description: 'JSON blob containing postflight request data'
-          required: true
-          schema:
-            $ref: '#/definitions/AnyValue'
-      responses:
-        200:
-          description: "Successful response"
-          schema:
-            $ref: '#/definitions/AnyValue'
   /santa/blockables/{machine_id}/{file_identifier}:
     get:
       summary: "Handle blockables requests"

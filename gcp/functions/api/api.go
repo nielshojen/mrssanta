@@ -100,6 +100,26 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, `{"message": "Rule assigned successfully"}`)
 
+	case r.Method == http.MethodDelete && Endpoint == "managedapp" && ID != "":
+		reqBody, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Failed to read request body: %v", err)
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		err = unassignRule(ctx, w, reqBody, ID)
+		if err != nil {
+			log.Printf("Failed to unassign rule: %v", err)
+			http.Error(w, fmt.Sprintf("Failed to unassign rule: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, `{"message": "Rule unassigned successfully"}`)
+
 	case r.Method == http.MethodGet && Endpoint == "devices" && ID == "":
 		devices, err := getAllDevices(ctx)
 		if err != nil {

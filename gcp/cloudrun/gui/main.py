@@ -7,33 +7,11 @@ from datetime import datetime, timezone
 from flask import Flask, render_template, send_from_directory, abort, jsonify, request, redirect, url_for, session
 from flask_session import Session
 import msal
-from google.cloud import firestore
 from pymongo import MongoClient
 
-FIRESTORE_DATABASE = os.getenv("FIRESTORE_DATABASE")
-firestore_client = firestore.Client(database=FIRESTORE_DATABASE)
-
-class FirestoreSessionInterface:
-    def __init__(self):
-        self.collection = firestore_client.collection("sessions")  # Firestore collection for sessions
-
-    def open_session(self, request):
-        session_id = request.cookies.get("session_id")
-        if not session_id:
-            session_id = str(uuid.uuid4())  # Generate new session ID
-
-        doc = self.collection.document(session_id).get()
-        return doc.to_dict() if doc.exists else {}
-
-    def save_session(self, response):
-        session_id = request.cookies.get("session_id", str(uuid.uuid4()))
-        self.collection.document(session_id).set(dict(session))
-        response.set_cookie("session_id", session_id, httponly=True, secure=True)
-
 app = Flask(__name__)
-
 app.config["SESSION_TYPE"] = "filesystem"
-app.session_interface = FirestoreSessionInterface()
+app.config["SESSION_FILE_DIR"] = os.path.join(app.root_path, "flask_session")
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 Session(app)
@@ -44,11 +22,6 @@ TENANT_ID = os.getenv("MSAL_TENANT_ID")
 AUTHORITY = f"https://login.microsoftonline.com/{TENANT_ID}"
 REDIRECT_URI = os.getenv("MSAL_REDIRECT_URI")
 SCOPES = ["User.Read"]
-
-msal_app = msal.ConfidentialClientApplication(
-    CLIENT_ID, authority=AUTHORITY, client_credential=CLIENT_SECRET
-)
-
 VT_API_KEY = os.environ.get('VT_API_KEY')
 
 MONGO_URI = os.getenv("MONGO_URI")
@@ -108,6 +81,34 @@ def save_rule_db(identifier, data):
     print(result)
     return data
 
+def build_msal_app(user_id):
+    cache = load_cache(user_id)
+    app = msal.ConfidentialClientApplication(
+        client_id=CLIENT_ID,
+        authority=AUTHORITY,
+        client_credential=CLIENT_SECRET,
+        token_cache=cache
+    )
+    return app, cache
+
+def load_cache(user_id):
+    cache = msal.SerializableTokenCache()
+    record = db["sessions"].find_one({"user_id": user_id})
+    if record and "token_cache" in record:
+        cache.deserialize(record["token_cache"])
+    return cache
+
+def save_cache(user_id, cache):
+    if cache.has_state_changed:
+        db["sessions"].update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "token_cache": cache.serialize(),
+                "updated_at": datetime.utcnow()
+            }},
+            upsert=True
+        )
+
 def get_mongodb_count(collection_name):
     collection = db[collection_name]
     return collection.count_documents({})
@@ -119,46 +120,75 @@ def manifest():
 
 @app.route("/login")
 def login():
+    # No user_id yet, so just create MSAL app without a token cache
+    msal_app = msal.ConfidentialClientApplication(
+        client_id=CLIENT_ID,
+        authority=AUTHORITY,
+        client_credential=CLIENT_SECRET,
+    )
     auth_url = msal_app.get_authorization_request_url(SCOPES, redirect_uri=REDIRECT_URI)
     return redirect(auth_url)
 
 @app.route("/token")
 def token():
     """Handles login callback, gets user profile and profile picture."""
+
+    # Error check
     if "error" in request.args:
         return f"Error: {request.args['error']} - {request.args['error_description']}"
 
+    # Code check
     code = request.args.get("code")
     if not code:
         return "No authorization code received"
 
-    result = msal_app.acquire_token_by_authorization_code(code, scopes=SCOPES, redirect_uri=REDIRECT_URI)
+    # Create fresh token cache
+    cache = msal.SerializableTokenCache()
+
+    # Build MSAL app with cache
+    msal_app = msal.ConfidentialClientApplication(
+        client_id=CLIENT_ID,
+        authority=AUTHORITY,
+        client_credential=CLIENT_SECRET,
+        token_cache=cache
+    )
+
+    # Acquire token using auth code
+    result = msal_app.acquire_token_by_authorization_code(
+        code,
+        scopes=SCOPES,
+        redirect_uri=REDIRECT_URI
+    )
 
     if "access_token" in result:
-        headers = {"Authorization": f"Bearer {result['access_token']}"}
-        
-        # Fetch User Profile
+        access_token = result["access_token"]
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        # Fetch user profile
         user_info = requests.get("https://graph.microsoft.com/v1.0/me", headers=headers).json()
-        
-        # Fetch Profile Picture
-        profile_pic_url = "https://graph.microsoft.com/v1.0/me/photo/$value"
+        user_id = user_info.get("id")
+
+        # Fetch profile picture (optional)
         profile_pic = None
+        pic_response = requests.get("https://graph.microsoft.com/v1.0/me/photo/$value", headers=headers)
+        if pic_response.status_code == 200:
+            profile_pic = base64.b64encode(pic_response.content).decode("utf-8")
 
-        profile_pic_response = requests.get(profile_pic_url, headers=headers)
-        if profile_pic_response.status_code == 200:
-            profile_pic = base64.b64encode(profile_pic_response.content).decode('utf-8')
+        # Save MSAL token cache to MongoDB
+        save_cache(user_id, cache)
 
-        # Store user info in session
+        # Store user in session (for easy reference)
         session["user"] = {
+            "id": user_id,
             "name": user_info.get("displayName", "User"),
             "email": user_info.get("mail", user_info.get("userPrincipalName")),
-            "profile_pic": profile_pic,  # Store Base64-encoded image
+            "profile_pic": profile_pic,
         }
-        session["access_token"] = result.get("access_token")
 
         return redirect(url_for("index"))
 
-    return f"Authentication failed: {result.get('error_description')}"
+    # If something went wrong
+    return f"Authentication failed: {result.get('error_description') or result.get('error')}"
 
 
 @app.route("/logout")

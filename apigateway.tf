@@ -4,7 +4,6 @@ resource "local_file" "api_gateway_config" {
     EVENTUPLOAD_URL = google_cloudfunctions2_function.eventupload.url
     RULEDOWNLOAD_URL = google_cloudfunctions2_function.ruledownload.url
     POSTFLIGHT_URL = google_cloudfunctions2_function.postflight.url
-    XSRF_URL = google_cloudfunctions2_function.xsrf.url
     BLOCKABLES_URL = google_cloudfunctions2_function.blockables.url
     API_URL =  google_cloudfunctions2_function.api.url
   })
