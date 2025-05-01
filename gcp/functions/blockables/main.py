@@ -186,7 +186,7 @@ def blockables(request):
                         if len(assigned) >= vote_threshold:
                             rule['scope'] = 'global'
                             rule['custom_msg'] = 'Converted to global rule'
-                            rule['voted'] = True
+                            rule['converted'] = True
                             rule.pop("assigned")
                         else:
                             rule['assigned'] = assigned

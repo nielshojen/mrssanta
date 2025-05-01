@@ -336,18 +336,15 @@ def event_details(filesha256):
 @app.route('/events/<filesha256>/delete', methods=['DELETE'])
 def delete_event(filesha256):
     if "user" not in session:
-        return redirect(url_for("login"))
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
 
-    """
-    Deletes an event from MongoDB based on FileSha256.
-    """
     collection = db["events"]
-    existing_doc = collection.find_one({"FileSha256": filesha256})
-    
-    if not existing_doc:
-        abort(404, description="Document not found")
+    existing_doc = collection.find_one({"file_sha256": filesha256})
 
-    collection.delete_one({"FileSha256": filesha256})
+    if not existing_doc:
+        return jsonify({"success": False, "message": "Document not found"}), 404
+
+    collection.delete_one({"file_sha256": filesha256})
 
     return jsonify({"success": True, "message": f"Event {filesha256} deleted successfully."}), 200
 

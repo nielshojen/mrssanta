@@ -8,9 +8,30 @@
 
 {% block content %}
 
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                window.deleteEvent = function(FileSha256) {
+                    if (confirm("Are you sure you want to delete this event?")) {
+                        fetch(`/events/${FileSha256}/delete`, {
+                            method: "DELETE"
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert("Document deleted successfully!");
+                                window.location.href = "/events";
+                            } else {
+                                response.json().then(data => alert(data.message || "Error deleting document"));
+                            }
+                        })
+                        .catch(error => alert("Error: " + error));
+                    }
+                };
+            });
+        </script>
+
         <h1 class="text-center fw-bold mb-4">
             Event Details 
-            <button class="btn btn-santa btn-sm me-" onclick="deleteEvent('{{ data.file_sha256 }}')">
+            <button class="btn btn-santa btn-sm" onclick="deleteEvent('{{ data.file_sha256 }}')">
                 Delete Event
             </button>
             <button type="button" class="btn btn-santa btn-sm" data-bs-toggle="modal" data-bs-target="#navigationModal">
@@ -338,24 +359,6 @@
             let url = "https://www.virustotal.com/gui/file/{{ data.file_sha256 }}";
             window.open(url, "_blank");
         });
-    </script>
-    <script>
-        function deleteEvent(FileSha256) {
-            if (confirm("Are you sure you want to delete this event?")) {
-                fetch(`/events/${FileSha256}/delete`, {
-                    method: "DELETE"
-                })
-                .then(response => {
-                    if (response.ok) {
-                        alert("Document deleted successfully!");
-                        window.location.href = "/events";  // Redirect after deletion
-                    } else {
-                        response.json().then(data => alert(data.message || "Error deleting document"));
-                    }
-                })
-                .catch(error => alert("Error: " + error));
-            }
-        }
     </script>
     <script>
         $(document).ready(function() {

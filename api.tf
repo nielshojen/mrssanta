@@ -52,7 +52,7 @@ resource "google_cloudfunctions2_function" "api" {
       version    = "latest"
     }
     vpc_connector = data.google_vpc_access_connector.connector.id
-    vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
+    vpc_connector_egress_settings = "ALL_TRAFFIC"
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.account.email
   }

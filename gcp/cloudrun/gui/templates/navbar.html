@@ -20,6 +20,12 @@
             </li>
         </ul>
 
+        <ul class="navbar-nav ms-auto mr-4">¨
+            <button id="themeToggle" class="btn btn-outline-secondary">
+                <span id="themeIcon" class="bi bi-sun"></span>
+            </button>
+        </ul>
+
         <ul class="navbar-nav ms-auto mr-4">
             {% if session["user"] %}
                 {% if session["user"]["profile_pic"] %}
