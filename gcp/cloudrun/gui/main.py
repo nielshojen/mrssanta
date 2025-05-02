@@ -1,7 +1,6 @@
 import os
 import requests
 import base64
-import uuid
 from datetime import datetime, timezone
 
 from flask import Flask, render_template, send_from_directory, abort, jsonify, request, redirect, url_for, session

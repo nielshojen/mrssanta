@@ -60,7 +60,7 @@ resource "google_cloudfunctions2_function" "blockables" {
       version    = "latest"
     }
     vpc_connector = data.google_vpc_access_connector.connector.id
-    vpc_connector_egress_settings = "ALL_TRAFFIC"
+    vpc_connector_egress_settings = "PRIVATE_RANGES_ONLY"
     all_traffic_on_latest_revision = true
     service_account_email = google_service_account.account.email
   }

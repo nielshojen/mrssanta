@@ -188,6 +188,9 @@ func unassignRule(ctx context.Context, w http.ResponseWriter, jsonData []byte, r
 		return fmt.Errorf("rule %s not found in MongoDB", ruleID)
 	}
 
+	device.NeedsCleanSync = true
+	saveDevice(ctx, client, &device, device.Identifier)
+
 	log.Printf("Successfully unassigned device %s from rule %s", device.Identifier, ruleID)
 	return nil
 }

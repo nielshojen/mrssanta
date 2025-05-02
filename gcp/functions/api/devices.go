@@ -118,3 +118,40 @@ func createDevice(ctx context.Context, w http.ResponseWriter, jsonData []byte) (
 
 	return devices, nil
 }
+
+func saveDevice(ctx context.Context, client *mongo.Client, device *Device, machineID string) error {
+	collection := client.Database(os.Getenv("MONGO_DB")).Collection("devices")
+
+	device.ID = machineID
+
+	device.LastUpdated = primitive.NewDateTimeFromTime(time.Now())
+
+	updateData, err := bson.Marshal(device)
+	if err != nil {
+		log.Printf("Failed to convert device to BSON: %v", err)
+		return fmt.Errorf("failed to convert device to BSON: %w", err)
+	}
+
+	var updateMap bson.M
+	err = bson.Unmarshal(updateData, &updateMap)
+	if err != nil {
+		log.Printf("Failed to unmarshal BSON: %v", err)
+		return fmt.Errorf("failed to unmarshal BSON: %w", err)
+	}
+
+	delete(updateMap, "_id")
+
+	_, err = collection.UpdateOne(
+		ctx,
+		bson.M{"_id": machineID},
+		bson.M{"$set": updateMap},
+		options.Update().SetUpsert(true),
+	)
+
+	if err != nil {
+		log.Printf("Failed to save device data: %v", err)
+		return fmt.Errorf("failed to save device data: %w", err)
+	}
+
+	return nil
+}
