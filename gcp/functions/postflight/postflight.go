@@ -92,37 +92,26 @@ func decompressZlib(data []byte) ([]byte, error) {
 func saveDevice(ctx context.Context, client *mongo.Client, device *Device, machineID string) error {
 	collection := client.Database(os.Getenv("MONGO_DB")).Collection("devices")
 
-	device.ID = machineID
-
 	device.LastUpdated = primitive.NewDateTimeFromTime(time.Now())
 
-	updateData, err := bson.Marshal(device)
-	if err != nil {
-		log.Printf("Failed to convert device to BSON: %v", err)
-		return fmt.Errorf("failed to convert device to BSON: %w", err)
+	update := bson.M{
+		"needs_clean_sync": device.NeedsCleanSync,
+		"last_updated":     device.LastUpdated,
 	}
 
-	var updateMap bson.M
-	err = bson.Unmarshal(updateData, &updateMap)
-	if err != nil {
-		log.Printf("Failed to unmarshal BSON: %v", err)
-		return fmt.Errorf("failed to unmarshal BSON: %w", err)
-	}
-
-	delete(updateMap, "_id")
-
-	_, err = collection.UpdateOne(
+	result, err := collection.UpdateOne(
 		ctx,
 		bson.M{"_id": machineID},
-		bson.M{"$set": updateMap},
+		bson.M{"$set": update},
 		options.Update().SetUpsert(true),
 	)
 
 	if err != nil {
-		log.Printf("Failed to save device data: %v", err)
-		return fmt.Errorf("failed to save device data: %w", err)
+		log.Printf("Failed to update device: %v", err)
+		return fmt.Errorf("failed to update device: %w", err)
 	}
 
+	log.Printf("Matched %d, Modified %d", result.MatchedCount, result.ModifiedCount)
 	return nil
 }
 
