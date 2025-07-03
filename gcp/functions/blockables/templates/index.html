@@ -207,12 +207,17 @@
       <div class="col-lg-12">
 
         <div class="card border-dark shadow mb-4">
+            {% if response.binary.virustotal_result == 2 %}
+            <div class="card-header py-3 text-bg-danger">
+                <h6 class="m-0 font-weight-bold">Cannot Add Rule</h6>
+            {% else %}
             <div class="card-header py-3 text-bg-success">
                 <h6 class="m-0 font-weight-bold">Add Rule?</h6>
+            {% endif %}
             </div>
             <div class="card-body">
               {% if response.binary.virustotal_result == 2 %}
-              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-success">Malicious</b></p>
+              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-danger">Malicious</b></p>
               {% else %}
               <p class="card-text">Do you want to allow <b>{{ response.binary.file_name }}</b> to run on your Mac (<b>{{ response.device.hostname.split(".")[0] }}</b>)?</p>
               <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow">Allow</button>
@@ -229,12 +234,17 @@
       <div class="col-lg-12">
 
         <div class="card border-dark shadow mb-4">
+            {% if response.binary.virustotal_result == 2 %}
+            <div class="card-header py-3 text-bg-danger">
+                <h6 class="m-0 font-weight-bold">Cannot Add Rule</h6>
+            {% else %}
             <div class="card-header py-3 text-bg-success">
                 <h6 class="m-0 font-weight-bold">Add Rule?</h6>
+            {% endif %}
             </div>
             <div class="card-body">
               {% if response.binary.virustotal_result == 2 %}
-              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-success">Malicious</b></p>
+              <p class="card-text">{{ response.binary.file_name }} cannot be allowed to run on a Mac owned and managed by {{ response.organization }}, as it is found to be <b class="text-danger">Malicious</b></p>
               {% else %}
               <p class="card-text">Do you want to allow <b>{{ response.binary.file_name }}</b> to run on your Mac (<b>{{ response.device.hostname.split(".")[0] }}</b>)?</p>
               <button type="button" class="btn btn-outline-success btn-sm" type="submit" value="allow" id="allow-new">Allow</button>

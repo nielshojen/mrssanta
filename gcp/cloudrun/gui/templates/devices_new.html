@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}Devices{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        thead th {
+            background-color: #FF0000 !important;
+            color: white;
+        }
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <h1 class="text-center fw-bold mb-4">Devices</h1>
+
+    <!-- Edit Device -->
+    <div class="modal fade" id="editDeviceModal" tabindex="-1" aria-labelledby="editDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editDeviceForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editDeviceModalLabel">Edit Device</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="identifier" name="identifier">
+
+                        <div class="mb-3">
+                            <label class="form-label">Mode</label>
+                            <select class="form-select" id="client_mode" name="client_mode">
+                                <option value="MONITOR">Monitor</option>
+                                <option value="LOCKDOWN" selected>Lockdown</option>
+                            </select>
+                        </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Box for Hostname -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="hostnameSearch">Search by Hostname</label>
+            <input type="text" id="hostnameSearch" class="form-control" placeholder="Enter Hostname">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Hostname</th>
+                    <th>Username</th>
+                    <th>Mode</th>
+                    <th>Santa Version</th>
+                    <th>OS Version</th>
+                    <th>Model Identifier</th>
+                    <th>Serialnumber</th>
+                    <th>Binary Rules</th>
+                    <th>Certificate Rules</th>
+                    <th>Team ID Rules</th>
+                    <th>Signing ID Rules</th>
+                    <th>CDHash Rules</th>
+                    <th>Compiler Rules</th>
+                    <th>Device Identifier</th>
+                    <th>Last Updated</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="devicesTableBody">
+                <!-- Devices will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="loading">Loading more devices...</div>
+{% endblock %}
+
+{% block content_scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let nextCursor = null;
+        let loading = false;
+        let hostnameQuery = "";
+    
+        function loadDevices(reset = false) {
+            if (loading || nextCursor === false) return;
+            loading = true;
+            $("#loading").show();
+    
+            if (reset) {
+                $("#devicesTableBody").empty();
+                nextCursor = null;
+            }
+    
+            $.get("/load_devices", { cursor: nextCursor, hostname: hostnameQuery }, function(response) {
+                if (response.data.length > 0) {
+                    response.data.forEach(device => {
+                        // Convert client_mode values
+                        let clientModeText = "";
+                        if (device.client_mode === 1) {
+                            clientModeText = "MONITOR";
+                        } else if (device.client_mode === 2) {
+                            clientModeText = "LOCKDOWN";
+                        } else {
+                            clientModeText = device.client_mode || "UNKNOWN"; // Handle unexpected values
+                        }
+
+                        let row = `
+                            <tr>
+                                <td>${device.hostname.split('.')[0] || ""}</td>
+                                <td>${device.primary_user || ""}</td>
+                                <td>${clientModeText}</td>  <!-- Updated value -->
+                                <td>${device.santa_version || ""}</td>
+                                <td>${device.os_version || ""}</td>
+                                <td>${device.model_identifier || ""}</td>
+                                <td>${device.serial_num || ""}</td>
+                                <td>${device.binary_rule_count || 0}</td>
+                                <td>${device.certificate_rule_count || 0}</td>
+                                <td>${device.teamid_rule_count || 0}</td>
+                                <td>${device.signingid_rule_count || 0}</td>
+                                <td>${device.cdhash_rule_count || 0}</td>
+                                <td>${device.compiler_rule_count || 0}</td>
+                                <td>${device.identifier || ""}</td>
+                                <td>${device.last_updated || ""}</td>
+                                <td>
+                                    <button class="btn btn-primary edit-rule-btn" data-bs-toggle="modal" data-bs-target="#editDeviceModal" data-id="${device.identifier}">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        $("#devicesTableBody").append(row);
+                    });
+
+                    nextCursor = response.next_cursor;
+                } else {
+                    nextCursor = false;
+                }
+
+                $("#loading").hide();
+                loading = false;
+            });
+        }
+    
+        $(document).ready(function() {
+            loadDevices();  // Load first batch
+    
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadDevices();
+                }
+            });
+
+            $("#editDeviceForm").submit(function(event){
+                event.preventDefault();
+                
+                $.ajax({
+                    url: "/save_device",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        identifier: $("#identifier").val(),
+                        client_mode: $("#client_mode").val(),
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        $("#editDeviceModal").modal("hide");
+                        location.reload();  // Reload the page to update the table
+                    },
+                    error: function(xhr) {
+                        alert("Failed to update rule: " + xhr.responseText);
+                    }
+                });
+            });
+    
+            // Trigger search only when Enter is pressed
+            $("#hostnameSearch").on("keypress", function(event) {
+                if (event.key === "Enter") {
+                    hostnameQuery = $(this).val().trim();
+                    loadDevices(true);
+                    event.preventDefault(); // Prevents form submission (if inside a form)
+                }
+            });
+        });
+    </script>
+{% endblock %}

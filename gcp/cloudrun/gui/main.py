@@ -253,6 +253,30 @@ def load_devices():
 
     return jsonify({"data": data, "next_cursor": next_cursor})
 
+@app.route("/save_device", methods=["POST"])
+def save_device():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    try:
+        data = request.json
+        client_mode = data.get("client_mode")
+        identifier = data.get("identifier")
+
+        if not identifier:
+            return jsonify({"success": False, "message": "Identifier are required"}), 400
+
+        rule_data = {
+            "client_mode": client_mode,
+        }
+
+        save_rule_db(identifier, rule_data)
+
+        return jsonify({"success": True, "message": "Rule saved", "doc_id": identifier}), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 # Events
 @app.route("/events")
 def events():
