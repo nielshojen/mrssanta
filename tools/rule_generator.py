@@ -27,13 +27,31 @@ def is_installed(name, kind):
     flag = "--formula" if kind=="formula" else "--cask"
     return subprocess.call(["brew", "list", flag, name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
 
-# def is_outdated(name, kind):
-#     flag = "--formula" if kind=="formula" else "--cask"
-#     out = run(["brew", "outdated", flag, name])
-#     return name in out.split()
+def ensure_updated():
+    try:
+        print("Running: brew update")
+        subprocess.run(["brew", "update"], check=True, stdout=sys.stdout, stderr=sys.stderr)
 
-def ensure_latest(name, kind):
-    subprocess.call(["brew", "update"])
+        print("Checking for outdated formulae or casks...")
+        outdated = subprocess.check_output(["brew", "outdated"], text=True).strip().splitlines()
+
+        if not outdated:
+            print("Everything is already up to date.")
+            return True
+
+        print(f"⬆Upgrading {len(outdated)} item(s): {', '.join(outdated)}")
+        subprocess.run(["brew", "upgrade"], check=True, stdout=sys.stdout, stderr=sys.stderr)
+
+        print("Upgrade completed.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Brew command failed: {e}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("Interrupted by user.", file=sys.stderr)
+        sys.exit(1)
+
+def ensure_installed(name, kind):
     if not is_installed(name, kind):
         cmd = ["brew", "install", name] if kind=="formula" else ["brew", "install", "--cask", name]
         subprocess.check_call(cmd)
@@ -53,6 +71,7 @@ def find_executables(base_path):
     executables = []
     for root, dirs, files in os.walk(base_path):
         for name in files:
+            print(f"Checking {name} in {root}")
             full_path = os.path.join(root, name)
             try:
                 if is_executable(full_path):
@@ -96,7 +115,7 @@ def fallback_scan(cask, prefix):
 def get_cask(c):
     prefix = subprocess.check_output(["brew", "--prefix"], text=True).strip()
 
-    ensure_latest(c, "cask")
+    ensure_installed(c, "cask")
 
     meta = get_metadata(c)
     bins, version = resolve_binaries(c, meta, prefix)
@@ -128,7 +147,7 @@ def get_formula(p):
 
     prefix = get_brew_prefix(p)
 
-    ensure_latest(p, "formula")
+    ensure_installed(p, "formula")
 
     executables = find_executables(os.path.join(prefix, "Cellar", p, version))
     if not executables:
@@ -175,10 +194,17 @@ def post_mrssanta_rule(url, key, rule):
 candidate_shas = []
 
 def main():
+    result = ensure_updated()
+
+    print(f"Update successful: {result}")
+
     with open("tools/rule_generator.json", encoding='utf-8') as f:
         rules = json.load(f)
+
+    print(f"Loaded {len(rules)} rules to generate ...")
     
     for rule in rules:
+        print(f"Processing {rule['package_type']} package: {rule['package']}")
         if rule.get("package_type") == "homebrew" and rule.get("type") == "cask":
             shas = get_cask(rule.get("package"))
             if shas:
