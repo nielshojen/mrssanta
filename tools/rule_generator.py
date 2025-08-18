@@ -2,8 +2,8 @@
 
 import subprocess, json, os, sys, hashlib, requests
 
-MRSSANTA_API_URL = "https://mrssanta.bestseller.com"
-MRSSANTA_API_KEY = "njMfW2R3MkbfhWjvxNlor8MIpMVliFgTbQ0QDr1bF4ILddGSmyb6lS9xYISxVuWf"
+MRSSANTA_API_URL = ""
+MRSSANTA_API_KEY = ""
 
 def run(cmd):
     return subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL).strip()
