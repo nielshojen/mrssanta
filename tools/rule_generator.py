@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 
-import subprocess, json, os, sys, hashlib, requests
+import subprocess
+import json
+import os
+import sys
+import hashlib
+import requests
 
-MRSSANTA_API_URL = ""
-MRSSANTA_API_KEY = ""
+import time
+import atexit
+start_time = time.time()
+
+MRSSANTA_API_URL = os.getenv("MRSSANTA_API_URL")
+MRSSANTA_API_KEY = os.getenv("MRSSANTA_API_KEY")
 
 def run(cmd):
     return subprocess.check_output(cmd, text=True, stderr=subprocess.DEVNULL).strip()
@@ -55,14 +64,10 @@ def ensure_installed(name, kind):
     if not is_installed(name, kind):
         cmd = ["brew", "install", name] if kind=="formula" else ["brew", "install", "--cask", name]
         subprocess.check_call(cmd)
-    # elif is_outdated(name, kind):
-    #     cmd = ["brew", "upgrade", name] if kind=="formula" else ["brew", "upgrade", "--cask", name]
-    #     subprocess.check_call(cmd)
 
 def get_metadata(cask):
     raw = subprocess.check_output(["brew", "info", "--cask", cask, "--json=v2"], text=True)
     return json.loads(raw)["casks"][0]
-
 
 def is_executable(path):
     return os.path.isfile(path) and os.access(path, os.X_OK)
@@ -191,6 +196,10 @@ def post_mrssanta_rule(url, key, rule):
         print(f"Error posting rule to {url}: {result.status_code} {result.text}", file=sys.stderr)
         sys.exit(1)
 
+def report_runtime():
+    end_time = time.time()
+    print(f"⏱️ Total runtime: {end_time - start_time:.2f} seconds")
+
 candidate_shas = []
 
 def main():
@@ -236,6 +245,8 @@ def main():
         print(json.dumps(new_rules, indent=2))
         if len(new_rules) > 0:
             post_mrssanta_rule(MRSSANTA_API_URL, MRSSANTA_API_KEY, new_rules)
+        
+        atexit.register(report_runtime)
 
 if __name__ == "__main__":
     main()
