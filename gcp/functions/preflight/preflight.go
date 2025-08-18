@@ -69,7 +69,8 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 
 	needsCleanSync := existingDevice == nil ||
 		(existingDevice.LastCleanSync.Time().IsZero()) ||
-		time.Since(existingDevice.LastCleanSync.Time()) > 24*time.Hour
+		time.Since(existingDevice.LastCleanSync.Time()) > 24*time.Hour ||
+		existingDevice.NeedsCleanSync
 
 	if existingDevice == nil {
 		device.LastUpdated = primitive.NewDateTimeFromTime(time.Now())
@@ -96,9 +97,15 @@ func preflightHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	syncType := "NORMAL"
-	if needsCleanSync {
+
+	if device.RequestCleanSync {
 		syncType = "CLEAN"
 		log.Printf("Setting CLEAN sync for device %s", machineID)
+	}
+
+	if needsCleanSync {
+		syncType = "CLEAN_ALL"
+		log.Printf("Setting CLEAN_ALL sync for device %s", machineID)
 	}
 
 	response := Response{

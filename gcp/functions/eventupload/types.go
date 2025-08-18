@@ -32,8 +32,8 @@ type Event struct {
 	SigningID                   string             `bson:"signing_id,omitempty" json:"signing_id,omitempty"`
 	TeamID                      string             `bson:"team_id,omitempty" json:"team_id,omitempty"`
 	CDHash                      string             `bson:"cdhash,omitempty" json:"cdhash,omitempty"`
-	EntitlementInfo             []EntitlementInfo  `bson:"entitlementInfo,omitempty" json:"entitlementInfo,omitempty"`
-	CSFlags                     int32              `bson:"csFlags,omitempty" json:"csFlags,omitempty"`
+	EntitlementInfo             *EntitlementInfo   `bson:"entitlementInfo,omitempty" json:"entitlementInfo,omitempty"`
+	CSFlags                     int64              `bson:"csFlags,omitempty" json:"csFlags,omitempty"`
 	SigningStatus               string             `bson:"signingStatus,omitempty" json:"signingStatus,omitempty"`
 	VirusTotalResult            int                `bson:"virustotal_result,omitempty" json:"virustotal_result,omitempty"`
 	CreationTime                primitive.DateTime `bson:"creation_time,omitempty" json:"creation_time,omitempty"`
@@ -53,6 +53,7 @@ type Rule struct {
 	FileBundleHash        string             `bson:"file_bundle_hash,omitempty" json:"file_bundle_hash,omitempty"`
 	Scope                 string             `bson:"scope,omitempty" json:"scope"`
 	Assigned              []string           `bson:"assigned,omitempty" json:"assigned,omitempty"`
+	Converted             bool               `bson:"converted,omitempty" json:"converted,omitempty"`
 	CreationTime          primitive.DateTime `bson:"creation_time,omitempty" json:"creation_time,omitempty"`
 	LastUpdated           primitive.DateTime `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
 }
@@ -67,13 +68,13 @@ type SigningChain struct {
 }
 
 type EntitlementInfo struct {
-	EntitlementsFiltered string        `bson:"entitlementsFiltered" json:"entitlementsFiltered"`
-	Entitlements         []Entitlement `bson:"entitlements" json:"entitlements"`
+	EntitlementsFiltered bool          `bson:"entitlementsFiltered,omitempty" json:"entitlementsFiltered,omitempty"`
+	Entitlements         []Entitlement `bson:"entitlements,omitempty" json:"entitlements,omitempty"`
 }
 
 type Entitlement struct {
-	Key   string `bson:"key" json:"key"`
-	Value string `bson:"value" json:"value"`
+	Key   string `bson:"key,omitempty" json:"key,omitempty"`
+	Value string `bson:"value,omitempty" json:"value,omitempty"`
 }
 
 type Labels struct {

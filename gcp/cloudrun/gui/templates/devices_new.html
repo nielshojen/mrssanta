@@ -21,6 +21,35 @@
 {% block content %}
     <h1 class="text-center fw-bold mb-4">Devices</h1>
 
+    <!-- Edit Device -->
+    <div class="modal fade" id="editDeviceModal" tabindex="-1" aria-labelledby="editDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editDeviceForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editDeviceModalLabel">Edit Device</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="identifier" name="identifier">
+
+                        <div class="mb-3">
+                            <label class="form-label">Mode</label>
+                            <select class="form-select" id="client_mode" name="client_mode">
+                                <option value="MONITOR">Monitor</option>
+                                <option value="LOCKDOWN" selected>Lockdown</option>
+                            </select>
+                        </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Search Box for Hostname -->
     <div class="row mb-3">
         <div class="col-md-4">
@@ -48,6 +77,7 @@
                     <th>Compiler Rules</th>
                     <th>Device Identifier</th>
                     <th>Last Updated</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="devicesTableBody">
@@ -106,6 +136,11 @@
                                 <td>${device.compiler_rule_count || 0}</td>
                                 <td>${device.identifier || ""}</td>
                                 <td>${device.last_updated || ""}</td>
+                                <td>
+                                    <button class="btn btn-primary edit-rule-btn" data-bs-toggle="modal" data-bs-target="#editDeviceModal" data-id="${device.identifier}">
+                                        Edit
+                                    </button>
+                                </td>
                             </tr>
                         `;
                         $("#devicesTableBody").append(row);
@@ -128,6 +163,28 @@
                 if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
                     loadDevices();
                 }
+            });
+
+            $("#editDeviceForm").submit(function(event){
+                event.preventDefault();
+                
+                $.ajax({
+                    url: "/save_device",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        identifier: $("#identifier").val(),
+                        client_mode: $("#client_mode").val(),
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        $("#editDeviceModal").modal("hide");
+                        location.reload();  // Reload the page to update the table
+                    },
+                    error: function(xhr) {
+                        alert("Failed to update rule: " + xhr.responseText);
+                    }
+                });
             });
     
             // Trigger search only when Enter is pressed

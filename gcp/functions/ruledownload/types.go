@@ -19,6 +19,7 @@ type Rule struct {
 	FileBundleHash        string             `bson:"file_bundle_hash,omitempty" json:"file_bundle_hash,omitempty"`
 	Scope                 string             `bson:"scope,omitempty" json:"scope"`
 	Assigned              []string           `bson:"assigned,omitempty" json:"assigned,omitempty"`
+	Converted             bool               `bson:"converted,omitempty" json:"converted,omitempty"`
 	CreationTime          primitive.DateTime `bson:"creation_time,omitempty" json:"creation_time,omitempty"`
 	LastUpdated           primitive.DateTime `bson:"last_updated,omitempty" json:"last_updated,omitempty"`
 }

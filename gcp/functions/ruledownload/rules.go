@@ -35,7 +35,7 @@ func getGlobalRules(ctx context.Context, client *mongo.Client) ([]*Rule, error) 
 	return rules, cursor.Err()
 }
 
-func getMunkiRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
+func getManagedAppRules(ctx context.Context, client *mongo.Client, ID string) ([]*Rule, error) {
 	collection := client.Database(os.Getenv("MONGO_DB")).Collection("rules")
 	cursor, err := collection.Find(ctx, bson.M{"scope": "managedapp", "assigned": ID})
 	if err != nil {
@@ -173,7 +173,7 @@ func ruledownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if managedapprules, err := getMunkiRules(ctx, client, machineID); err == nil {
+	if managedapprules, err := getManagedAppRules(ctx, client, machineID); err == nil {
 		rules = append(rules, managedapprules...)
 	} else {
 		http.Error(w, fmt.Sprintf("Failed to get managedapp rules: %v", err), http.StatusInternalServerError)

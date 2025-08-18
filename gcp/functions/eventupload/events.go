@@ -95,6 +95,8 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.Unmarshal(decompressedData, &request); err != nil {
 		log.Printf("Failed to decode JSON from decompressed data: %v", err)
+		// Debug: show the decompressed JSON
+		log.Printf("Decompressed JSON: %s", string(decompressedData))
 		http.Error(w, "Failed to decode JSON", http.StatusBadRequest)
 		return
 	}
@@ -113,7 +115,6 @@ func eventuploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		sanitizedEvent := sanitizeEvent(event)
-
 
 		sanitizedEvent.CheckFileNamePrefix(ctx, client)
 

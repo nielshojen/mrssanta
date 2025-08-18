@@ -108,7 +108,7 @@ resource "google_cloud_run_service" "gui" {
       }
       annotations = {
         "autoscaling.knative.dev/minScale"        = "0"
-        "autoscaling.knative.dev/maxScale"        = "100"
+        "autoscaling.knative.dev/maxScale"        = "10"
         "run.googleapis.com/vpc-access-connector" = "projects/workplace-f488/locations/europe-west3/connectors/serverless-connector"
         "run.googleapis.com/vpc-access-egress"    = "private-ranges-only"
         "run.googleapis.com/client-name"          = "terraform"

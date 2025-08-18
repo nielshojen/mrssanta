@@ -118,11 +118,13 @@
     
                 if (response.data.length > 0) {
                     response.data.forEach(event => {
-                        let vtResult = "No Scan Available";
+                        let vtResult = "";
                         if (event.virustotal_result == 2) {
                             vtResult = "<b class='text-danger'>Malicious</b>";
                         } else if (event.virustotal_result == 1) {
                             vtResult = "<b class='text-success'>Safe</b>";
+                        } else if (event.virustotal_result == 0) {
+                            vtResult = "No Scan Availables";
                         }
     
                         let row = `

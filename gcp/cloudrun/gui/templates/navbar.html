@@ -20,13 +20,25 @@
             </li>
         </ul>
 
-        <ul class="navbar-nav ms-auto mr-4">
+        <!-- Left-aligned: dark mode toggle -->
+        <ul class="navbar-nav me-auto w-100 d-flex justify-content-end">
+            <li class="nav-item">
+              <button id="themeToggle" class="btn btn-outline-secondary">
+                <span id="themeIcon" class="bi bi-sun"></span>
+              </button>
+            </li>
+        </ul>
+
+        <!-- Right-aligned: user info -->
+        <ul class="navbar-nav ms-auto d-flex flex-row align-items-center">
             {% if session["user"] %}
                 {% if session["user"]["profile_pic"] %}
-                <img src="data:image/png;base64,{{ session['user']['profile_pic'] }}" class="rounded me-2" width="40" height="40" alt="User Profile">
+                <li class="nav-item ms-3">
+                    <img src="data:image/png;base64,{{ session['user']['profile_pic'] }}" class="rounded" width="40" height="40" alt="User Profile">
+                </li>
                 {% endif %}
-                <li class="nav-item d-flex align-items-center">
-                  <span class="navbar-text me-3 text-white">{{ session["user"]["name"] }}</span>
+                <li class="nav-item ms-2">
+                    <span class="navbar-text text-white">{{ session["user"]["name"] }}</span>
                 </li>
             {% endif %}
         </ul>
