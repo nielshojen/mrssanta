@@ -4,7 +4,7 @@
 
 locals {
   app = {
-    image_registry = google_artifact_registry_repository.images.registry_uri
+    image_registry = var.image_registry
 
     service_account_annotations = {
       "iam.gke.io/gcp-service-account" = google_service_account.account.email
@@ -42,6 +42,7 @@ module "prod" {
   environment = var.environment
 
   image_registry              = local.app.image_registry
+  image_tag                   = var.image_tag
   service_account_annotations = local.app.service_account_annotations
   node_selector               = local.app.node_selector
   ingress_class_name          = local.app.ingress_class_name
@@ -78,6 +79,7 @@ module "test" {
   disabled_services = ["worker"]
 
   image_registry              = local.app.image_registry
+  image_tag                   = var.image_tag
   service_account_annotations = local.app.service_account_annotations
   node_selector               = local.app.node_selector
   ingress_class_name          = local.app.ingress_class_name

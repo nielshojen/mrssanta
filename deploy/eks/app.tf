@@ -69,7 +69,7 @@ module "app" {
   autoscaling       = each.key == "prod"
   disabled_services = each.key == "prod" ? [] : ["worker"]
 
-  image_registry      = local.image_registry
+  image_registry      = var.image_registry
   image_tag           = var.image_tag
   ingress_class_name  = var.ingress_class_name
   ingress_annotations = var.ingress_annotations
@@ -102,10 +102,6 @@ output "sync_base_url" {
   description = "Santa's SyncBaseURL"
 }
 
-output "image_registry" {
-  value       = local.image_registry
-  description = "Push the images here: make REGISTRY=<this> in each containers/ folder"
-}
 
 output "name_servers" {
   value       = local.name_servers

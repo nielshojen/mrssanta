@@ -38,9 +38,9 @@ Layout:
 |---|---|
 | `deploy/modules/app` | The app itself: namespace, deployments, services, autoscalers, the `ExternalSecret`, the certificate and the ingress. Shared by all three clouds |
 | `deploy/modules/atlas` | MongoDB Atlas database user and search indexes |
-| `deploy/gke` | Google Cloud: Artifact Registry, Secret Manager, Cloud DNS, workload identity. Runs production and a test copy at `test.<service>.<domain>` |
-| `deploy/aks` | Azure: resource group, Container Registry (with pull access for the cluster), Key Vault, Azure DNS zone |
-| `deploy/eks` | AWS: ECR repositories, Secrets Manager secrets (with a read policy for External Secrets Operator), Route 53 zone |
+| `deploy/gke` | Google Cloud: Secret Manager, Cloud DNS, workload identity, and an Artifact Registry repository for images you build yourself. Runs production and a test copy at `test.<service>.<domain>` |
+| `deploy/aks` | Azure: resource group, Key Vault, Azure DNS zone |
+| `deploy/eks` | AWS: Secrets Manager secrets (with a read policy for External Secrets Operator), Route 53 zone |
 
 Each cloud directory creates a DNS zone for `<service>.<domain>` pointing at the ingress, which you delegate from the parent domain (the AKS and EKS examples output the name servers). On AKS and EKS, set `enable_test_environment = true` for a test copy like GKE's. The test copy shares production's database, so it doesn't run the worker.
 
@@ -49,10 +49,16 @@ To deploy:
 1. Put the variables in `terraform.auto.tfvars` in the cloud's directory (git ignores it). The variables are described in each directory's `*variables.tf` and `main.tf`.
 2. AKS and EKS keep their state in a storage account or S3 bucket you create first. Put its settings in a backend file, e.g. `deploy/eks/backend.hcl` with `bucket`, `key` and `region`, or `deploy/aks/backend.hcl` with `resource_group_name`, `storage_account_name`, `container_name` and `key`. GKE's state bucket is set in `deploy/gke/backend.tf`.
 3. From the repository root, run `make init`, `make plan` and `make deploy`. They use `deploy/gke` unless you pass another directory, e.g. `make init TF_DIR=deploy/eks BACKEND_CONFIG=backend.hcl`, then `make plan TF_DIR=deploy/eks`.
-4. Build and push the images with `make` in each folder under `containers/`. They push to the GKE registry by default; for the others pass the `image_registry` output, e.g. `make REGISTRY=123456789012.dkr.ecr.eu-west-1.amazonaws.com/mrssanta`. Log in to the registry first (`az acr login`, `aws ecr get-login-password`).
+4. The examples pull the images this repository publishes to `ghcr.io/nielshojen/mrssanta` (see [Prebuilt images](#prebuilt-images)). To use your own builds, set the `image_registry` variable and push there with `make REGISTRY=<registry>` in each folder under `containers/`.
 5. Point Santa's `SyncBaseURL` at the `sync_base_url` output.
 
-On AKS, the Kubernetes provider uses the cluster's local accounts; clusters that only allow Entra ID sign-in need an `exec` block running `kubelogin` instead. On EKS, the nodes need read access to ECR, which managed node groups have by default.
+#### Prebuilt images
+
+When a pull request is merged into `main`, the [Container images](.github/workflows/images.yml) workflow builds every container and pushes it to GitHub Container Registry as `ghcr.io/<owner>/mrssanta/<container>`, tagged `latest` and `sha-<commit>`. It only runs when something under `containers/` changed, and can also be started by hand from the Actions tab. The images are built for `linux/amd64`.
+
+All three Terraform examples use these images by default: their `image_registry` variable defaults to `ghcr.io/nielshojen/mrssanta`, and `image_tag` to `latest` (set it to a `sha-<commit>` tag to pin a version). The app module doesn't set an image pull secret, so the packages must be public: new GHCR packages are private, so change each one's visibility in its GitHub package settings after the first run.
+
+On AKS, the Kubernetes provider uses the cluster's local accounts; clusters that only allow Entra ID sign-in need an `exec` block running `kubelogin` instead.
 
 The first `make plan` on GKE after updating shows the Kubernetes resources and the Atlas resources being moved into the modules (`moved` blocks in `deploy/gke/app.tf` and `mongodb.tf`), not destroyed and recreated. Check that before applying. The admin and approval site get a new session key in the test copy, which signs test users out once.
 

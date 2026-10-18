@@ -14,7 +14,7 @@ variable "zone" {
 }
 
 variable "domain" {
-  type        = string
+  type = string
 }
 
 variable "service" {
@@ -91,25 +91,25 @@ variable "mongodb_project_id" {
 variable "service_version" {
   type        = string
   description = "Service version"
-  default = "0.1"
+  default     = "0.1"
 }
 
 variable "sync_interval_monitor" {
   type        = string
   description = "Sync Interval when in Monitor mode (seconds)"
-  default = 14400
+  default     = 14400
 }
 
 variable "sync_interval_lockdown" {
   type        = string
   description = "Sync Interval when in Lockdown mode (seconds)"
-  default = 60
+  default     = 60
 }
 
 variable "clean_sync_max_age_days" {
   type        = string
   description = "Days a device may go without a completed clean sync before a full (CLEAN_ALL) sync is forced"
-  default = 30
+  default     = 30
 }
 
 variable "virustotal_api_key" {
@@ -138,7 +138,7 @@ variable "support_phone" {
 }
 
 variable "labels" {
-  type = map(string)
+  type        = map(string)
   description = "The labels to apply to the resources"
 }
 
@@ -157,4 +157,16 @@ variable "logstash_tcp_addr" {
   type        = string
   description = "Optional host:port eventupload also forwards events to"
   default     = "logstash.macgcp.internal:5228"
+}
+
+variable "image_registry" {
+  type        = string
+  description = "Registry the container images are pulled from. The default is the images built by this repository's GitHub workflow; the Artifact Registry repository in artifacts.tf is kept for images you build yourself"
+  default     = "ghcr.io/nielshojen/mrssanta"
+}
+
+variable "image_tag" {
+  type        = string
+  description = "Tag of every container image, e.g. a sha-<commit> tag to pin a version"
+  default     = "latest"
 }

@@ -1,7 +1,7 @@
 # Azure: deploys into an existing AKS cluster that already runs an ingress
 # controller, cert-manager and External Secrets Operator. Terraform adds a
-# resource group with a container registry, a Key Vault for the secrets and
-# a DNS zone, then deploys the app with the shared module.
+# resource group with a Key Vault for the secrets and a DNS zone, then
+# deploys the app with the shared module. Images come from var.image_registry.
 
 terraform {
   required_providers {
@@ -37,7 +37,7 @@ variable "location" {
 variable "resource_group_name" {
   type        = string
   default     = "mrssanta"
-  description = "Resource group Terraform creates for the registry, Key Vault and DNS zone"
+  description = "Resource group Terraform creates for the Key Vault and DNS zone"
 }
 
 variable "aks_cluster_name" {
@@ -47,11 +47,6 @@ variable "aks_cluster_name" {
 variable "aks_resource_group_name" {
   type        = string
   description = "Resource group of the existing AKS cluster"
-}
-
-variable "registry_name" {
-  type        = string
-  description = "Container registry name: globally unique, 5-50 letters and digits"
 }
 
 variable "key_vault_name" {
@@ -111,32 +106,13 @@ locals {
     costcenter = var.costcenter
   })
 
-  image_registry = azurerm_container_registry.this.login_server
-  name_servers   = azurerm_dns_zone.this.name_servers
+  name_servers = azurerm_dns_zone.this.name_servers
 }
 
 resource "azurerm_resource_group" "this" {
   name     = var.resource_group_name
   location = var.location
   tags     = local.tags
-}
-
-# Images
-
-resource "azurerm_container_registry" "this" {
-  name                = var.registry_name
-  resource_group_name = azurerm_resource_group.this.name
-  location            = azurerm_resource_group.this.location
-  sku                 = "Basic"
-  admin_enabled       = false
-  tags                = local.tags
-}
-
-# Lets the cluster's nodes pull the images.
-resource "azurerm_role_assignment" "aks_pull" {
-  scope                = azurerm_container_registry.this.id
-  role_definition_name = "AcrPull"
-  principal_id         = data.azurerm_kubernetes_cluster.this.kubelet_identity[0].object_id
 }
 
 # Secrets

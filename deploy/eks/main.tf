@@ -1,7 +1,7 @@
 # AWS: deploys into an existing EKS cluster that already runs an ingress
-# controller, cert-manager and External Secrets Operator. Terraform adds ECR
-# repositories, Secrets Manager secrets and a Route 53 zone, then deploys the
-# app with the shared module.
+# controller, cert-manager and External Secrets Operator. Terraform adds
+# Secrets Manager secrets and a Route 53 zone, then deploys the app with the
+# shared module. Images come from var.image_registry.
 
 terraform {
   required_providers {
@@ -72,8 +72,6 @@ provider "mongodbatlas" {
   private_key = var.mongodb_private_key
 }
 
-data "aws_caller_identity" "current" {}
-
 data "aws_eks_cluster" "this" {
   name = var.eks_cluster_name
 }
@@ -89,42 +87,7 @@ provider "kubernetes" {
 }
 
 locals {
-  images = toset(["api", "preflight", "eventupload", "ruledownload", "postflight", "xsrf", "metrics", "admin", "web", "worker"])
-
-  image_registry = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.service}"
-  name_servers   = aws_route53_zone.this.name_servers
-}
-
-# Images. The cluster's node role needs ECR read access
-# (AmazonEC2ContainerRegistryReadOnly), which EKS node groups have by default.
-
-resource "aws_ecr_repository" "app" {
-  for_each = local.images
-
-  name                 = "${var.service}/${each.key}"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-resource "aws_ecr_lifecycle_policy" "app" {
-  for_each   = aws_ecr_repository.app
-  repository = each.value.name
-
-  policy = jsonencode({
-    rules = [{
-      rulePriority = 1
-      description  = "Keep the 3 most recent images"
-      selection = {
-        tagStatus   = "any"
-        countType   = "imageCountMoreThan"
-        countNumber = 3
-      }
-      action = { type = "expire" }
-    }]
-  })
+  name_servers = aws_route53_zone.this.name_servers
 }
 
 # Secrets
