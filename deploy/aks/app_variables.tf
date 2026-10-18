@@ -22,6 +22,12 @@ variable "enable_test_environment" {
   description = "Also run a test copy at test.<service>.<domain>, sharing the production database and secrets"
 }
 
+variable "image_registry" {
+  type        = string
+  default     = "ghcr.io/nielshojen/mrssanta"
+  description = "Registry the container images are pulled from. The default is the images built by this repository's GitHub workflow"
+}
+
 variable "image_tag" {
   type    = string
   default = "latest"
