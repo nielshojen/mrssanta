@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}More Info - Santa{% endblock %}
+
+{% block nav_links %}
+{% if response.back_url %}
+<a class="nav-link" href="{{ response.back_url }}">Back</a>
+{% endif %}
+<a class="nav-link active" aria-current="page" href="/santa/moreinfo">More Info</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-heading mb-4">
+  <p class="eyebrow mb-2">Santa</p>
+  <h1 class="display-6 fw-semibold mb-3">Application trust on your Mac</h1>
+  <p class="lead text-secondary mb-0">
+    Santa checks apps before they run, helps you make a safe choice, and keeps {{ response.organization }} devices protected.
+  </p>
+</div>
+
+<section class="section-card p-4 p-lg-5 mb-4">
+  <div class="row g-4 align-items-center">
+    <div class="col-lg-7">
+      <h2 class="h4 mb-3">What Santa does</h2>
+      <p class="text-secondary mb-3">
+        Apps that are already known are allowed automatically. Unknown apps can be reviewed and allowed when they are not considered malicious.
+      </p>
+      <p class="text-secondary mb-0">
+        If an app is approved on {{ response.vote_threshold }} unique Macs, the rule can become global and the app will be allowed on all Macs.
+      </p>
+    </div>
+    <div class="col-lg-5">
+      <div class="inset-panel p-3">
+        <dl class="row mb-0 g-2 small">
+          <dt class="col-6 text-secondary">Sync interval</dt>
+          <dd class="col-6 mb-0 text-end">{{ response.sync_interval }} minute(s)</dd>
+          <dt class="col-6 text-secondary">Managed apps</dt>
+          <dd class="col-6 mb-0 text-end">{{ response.selfserviceapp }}</dd>
+          <dt class="col-6 text-secondary">Organization</dt>
+          <dd class="col-6 mb-0 text-end">{{ response.organization }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <article class="section-card h-100 overflow-hidden">
+      <div class="p-4">
+        <p class="eyebrow mb-2">Step 1</p>
+        <h2 class="h5 mb-2">Review the prompt</h2>
+        <p class="text-secondary mb-0">When Santa blocks an unknown app, confirm that it is the app you intended to open.</p>
+      </div>
+      <div class="media-frame mx-4 mb-4">
+        <img src="/santa/static/popup.png" alt="Santa allow prompt">
+      </div>
+    </article>
+  </div>
+
+  <div class="col-lg-6">
+    <article class="section-card h-100 overflow-hidden">
+      <div class="p-4">
+        <p class="eyebrow mb-2">Step 2</p>
+        <h2 class="h5 mb-2">Check the scan result</h2>
+        <p class="text-secondary mb-0">If the security scan passes, the app can be allowed for your Mac.</p>
+      </div>
+      <div class="media-frame mx-4 mb-4">
+        <img src="/santa/static/results.png" alt="Santa scan results">
+      </div>
+    </article>
+  </div>
+
+  <div class="col-lg-6">
+    <article class="section-card h-100 overflow-hidden">
+      <div class="p-4">
+        <p class="eyebrow mb-2">Step 3</p>
+        <h2 class="h5 mb-2">Allow the app</h2>
+        <p class="text-secondary mb-0">After allowing it, your Mac will receive the rule after the next Santa sync.</p>
+      </div>
+      <div class="media-frame mx-4 mb-4">
+        <img src="/santa/static/allow.png" alt="Santa allow button">
+      </div>
+    </article>
+  </div>
+
+  <div class="col-lg-6">
+    <article class="section-card h-100 overflow-hidden">
+      <div class="p-4">
+        <p class="eyebrow mb-2">Step 4</p>
+        <h2 class="h5 mb-2">Sync faster if needed</h2>
+        <p class="text-secondary mb-0">Use the Santa menu bar icon and choose Sync to request a rule update sooner.</p>
+      </div>
+      <div class="media-frame mx-4 mb-4">
+        <img src="/santa/static/sync.png" alt="Santa sync menu">
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <article class="section-card h-100 overflow-hidden">
+      <div class="p-4">
+        <h2 class="h5 mb-2">Managed apps</h2>
+        <p class="text-secondary mb-0">
+          Managed apps, including apps that require approval or have a license cost, are blocked until installed by {{ response.selfserviceapp }}.
+        </p>
+      </div>
+      <div class="media-frame mx-4 mb-4">
+        <img src="/santa/static/notallowed.png" alt="Santa blocked managed app message">
+      </div>
+    </article>
+  </div>
+
+  <div class="col-lg-6">
+    <article class="section-card h-100 overflow-hidden">
+      <div class="p-4">
+        <h2 class="h5 mb-2">Blocked apps</h2>
+        <p class="text-secondary mb-0">
+          Apps that are not approved or are considered malicious are blocked from running.
+        </p>
+      </div>
+      <div class="media-frame mx-4 mb-4">
+        <img src="/santa/static/santa-block.gif" alt="Santa blocked app message">
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section-card p-4">
+  <h2 class="h5 mb-3">Need Help?</h2>
+  {% if response.organization %}
+  <p class="fw-semibold mb-2">Service Desk for {{ response.organization }}</p>
+  {% else %}
+  <p class="fw-semibold mb-2">Service Desk</p>
+  {% endif %}
+  <div class="d-flex flex-wrap gap-2">
+    {% if response.support_phone %}
+    <a href="tel:{{ response.support_phone }}" class="btn btn-outline-secondary">{{ response.support_phone }}</a>
+    {% endif %}
+    {% if response.support_email %}
+    <a href="mailto:{{ response.support_email }}" class="btn btn-outline-secondary">{{ response.support_email }}</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

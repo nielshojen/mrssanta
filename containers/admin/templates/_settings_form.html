@@ -1,0 +1,98 @@
+{#
+  Preflight settings fields. Used for the global settings page and for the
+  per-device overrides in the device modal. Every field can be left empty,
+  which means "not set": a device falls back to the global value and the
+  global value falls back to the server or Santa default.
+
+  Values are filled and read by static/js/settings_form.js. The path regex
+  fields get a builder from static/js/path_regex.js.
+#}
+{% macro settings_fields(options, inherit_label, show_default_client_mode=False) %}
+<div class="row g-3 settings-form">
+    {% if show_default_client_mode %}
+    <div class="col-md-4">
+        <label class="form-label fw-bold">Default client mode</label>
+        <select class="form-select" data-setting="default_client_mode">
+            <option value="">{{ inherit_label }} (LOCKDOWN)</option>
+            {% for mode in options.CLIENT_MODES.values() %}
+            <option value="{{ mode }}">{{ mode }}</option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Mode assigned to newly enrolled devices.</div>
+    </div>
+    {% endif %}
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold">Event upload batch size</label>
+        <input type="number" min="1" class="form-control" data-setting="event_batch_size" placeholder="{{ inherit_label }} (500)">
+    </div>
+
+    <div class="col-md-4">
+        <label class="form-label fw-bold">File access override</label>
+        <select class="form-select" data-setting="override_file_access_action">
+            <option value="">{{ inherit_label }}</option>
+            <option value="NONE">NONE - apply the policy as written</option>
+            <option value="AUDIT_ONLY">AUDIT_ONLY - log but allow</option>
+            <option value="DISABLE">DISABLE - take no action</option>
+        </select>
+    </div>
+
+    {% for key, label, hint in [
+        ("enable_bundles", "Bundle hashing", "Default: on"),
+        ("enable_transitive_rules", "Compiler (transitive) rules", "Default: on"),
+        ("enable_all_event_upload", "Upload all events", "Upload allowed executions too"),
+        ("disable_unknown_event_upload", "Skip unknown event upload", "Don't upload would-be-blocked events"),
+    ] %}
+    <div class="col-md-3">
+        <label class="form-label fw-bold">{{ label }}</label>
+        <select class="form-select" data-setting="{{ key }}" data-type="bool">
+            <option value="">{{ inherit_label }}</option>
+            <option value="true">On</option>
+            <option value="false">Off</option>
+        </select>
+        <div class="form-text">{{ hint }}</div>
+    </div>
+    {% endfor %}
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Allowed path regex</label>
+        <input type="text" class="form-control font-monospace" data-setting="allowed_path_regex" data-regex-builder="allow" placeholder="{{ inherit_label }}">
+        <div class="form-text">ICU regex. Executions from matching paths are allowed if no rule matches. Use with care.</div>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Blocked path regex</label>
+        <input type="text" class="form-control font-monospace" data-setting="blocked_path_regex" data-regex-builder="block" placeholder="{{ inherit_label }}">
+        <div class="form-text">ICU regex. Executions from matching paths are blocked if no rule matches.</div>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Event detail URL</label>
+        <input type="text" class="form-control" data-setting="event_detail_url" placeholder="{{ inherit_label }}">
+        <div class="form-text">Opened from the block dialog. Supports Santa placeholders such as %file_sha%, %machine_id% and %username%.</div>
+    </div>
+
+    <div class="col-md-6">
+        <label class="form-label fw-bold">Event detail button text</label>
+        <input type="text" class="form-control" data-setting="event_detail_text" placeholder="{{ inherit_label }}">
+    </div>
+
+    {% for key, label in [
+        ("removable_media_policy", "Removable media"),
+        ("encrypted_removable_media_policy", "Encrypted removable media"),
+    ] %}
+    <div class="col-md-6">
+        <label class="form-label fw-bold">{{ label }}</label>
+        <div class="input-group">
+            <select class="form-select" data-setting="{{ key }}" data-type="media">
+                <option value="">{{ inherit_label }}</option>
+                <option value="allow">Allow</option>
+                <option value="block">Block</option>
+                <option value="remount">Remount with flags</option>
+            </select>
+            <input type="text" class="form-control" data-setting-flags="{{ key }}" placeholder="Flags, e.g. rdonly,noexec">
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}

@@ -1,0 +1,17 @@
+ [
+   {
+      "package_type": "homebrew",
+      "type": "tap",
+      "package": "hashicorp/tap"
+   },
+   {
+      "package_type": "homebrew",
+      "type": "formula",
+      "package": "dotnet"
+   },
+   {
+      "package_type": "homebrew",
+      "type": "cask",
+      "package": "gcloud-cli"
+   }
+]

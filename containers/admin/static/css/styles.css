@@ -1,0 +1,492 @@
+/* Shares its design tokens with the user-facing pages in containers/web */
+:root {
+    --santa-logo-red: #ff5050;
+    --santa-accent: #d92b2b;
+    --santa-accent-hover: #b82222;
+    --santa-accent-soft: rgba(255, 80, 80, .1);
+    --santa-accent-text: #c42626;
+    --santa-bg: #faf8f7;
+    --santa-surface: #ffffff;
+    --santa-surface-muted: #f6f2f1;
+    --santa-border: rgba(60, 20, 20, .1);
+    --santa-ink: #1c1514;
+    --santa-muted: #6b6261;
+    --santa-green: #1a7f4b;
+    --santa-green-hover: #146a3e;
+    --santa-shadow: 0 1px 2px rgba(40, 10, 10, .04), 0 8px 24px rgba(40, 10, 10, .06);
+    --santa-radius: 1rem;
+    --santa-ease-out: cubic-bezier(.23, 1, .32, 1);
+
+    --bs-body-bg: var(--santa-bg);
+    --bs-body-color: var(--santa-ink);
+    --bs-secondary-color: var(--santa-muted);
+    --bs-border-color: var(--santa-border);
+    --bs-link-color-rgb: 196, 38, 38;
+    --bs-link-hover-color-rgb: 184, 34, 34;
+    --bs-body-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --bs-focus-ring-color: rgba(217, 43, 43, .3);
+    color-scheme: light;
+}
+
+[data-bs-theme="dark"] {
+    --santa-accent-soft: rgba(255, 80, 80, .16);
+    --santa-accent-text: #ff6b6b;
+    --santa-bg: #141011;
+    --santa-surface: #1d1819;
+    --santa-surface-muted: #262021;
+    --santa-border: rgba(255, 235, 235, .1);
+    --santa-ink: #f5efee;
+    --santa-muted: #a89e9d;
+    --santa-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+
+    --bs-body-bg: var(--santa-bg);
+    --bs-body-color: var(--santa-ink);
+    --bs-secondary-color: var(--santa-muted);
+    --bs-border-color: var(--santa-border);
+    --bs-link-color-rgb: 255, 107, 107;
+    --bs-link-hover-color-rgb: 255, 138, 138;
+    color-scheme: dark;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background:
+        radial-gradient(60rem 24rem at 50% -8rem, var(--santa-accent-soft), transparent 70%),
+        var(--santa-bg);
+    color: var(--santa-ink);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-weight: 600;
+    letter-spacing: -.02em;
+}
+
+.app-main {
+    flex: 1;
+    max-width: 1600px;
+    padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+/* Header */
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--santa-border);
+    background: color-mix(in srgb, var(--santa-surface) 72%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+}
+
+.app-header .navbar {
+    --bs-navbar-color: var(--santa-muted);
+    --bs-navbar-hover-color: var(--santa-ink);
+    --bs-navbar-active-color: var(--santa-accent-text);
+    padding-inline: clamp(.25rem, 2vw, 1rem);
+}
+
+.app-header .navbar-brand {
+    color: var(--santa-ink);
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+.brand-mark {
+    width: 2rem;
+    height: 2rem;
+    filter: drop-shadow(0 2px 6px rgba(255, 80, 80, .35));
+}
+
+.app-header .nav-link {
+    border-radius: 999px;
+    padding-inline: .875rem !important;
+    font-weight: 500;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.app-header .nav-link.active {
+    background: var(--santa-accent-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .app-header .nav-link:not(.active):hover {
+        background: var(--santa-surface-muted);
+    }
+}
+
+.nav-count {
+    background: var(--santa-accent);
+    color: #fff;
+    font-size: .7rem;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid var(--santa-border);
+    border-radius: 50%;
+    background: var(--santa-surface);
+    color: var(--santa-muted);
+    transition: transform 160ms var(--santa-ease-out), color 150ms ease, background-color 150ms ease;
+}
+
+.theme-toggle:active {
+    transform: scale(.94);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .theme-toggle:hover {
+        color: var(--santa-ink);
+        background: var(--santa-surface-muted);
+    }
+}
+
+.theme-menu {
+    --bs-dropdown-bg: var(--santa-surface);
+    --bs-dropdown-border-color: var(--santa-border);
+    --bs-dropdown-border-radius: .75rem;
+    --bs-dropdown-padding-x: .25rem;
+    --bs-dropdown-padding-y: .25rem;
+    --bs-dropdown-min-width: 9rem;
+    --bs-dropdown-link-color: var(--santa-ink);
+    --bs-dropdown-link-hover-color: var(--santa-ink);
+    --bs-dropdown-link-hover-bg: var(--santa-surface-muted);
+    --bs-dropdown-link-active-color: var(--santa-accent-text);
+    --bs-dropdown-link-active-bg: var(--santa-accent-soft);
+    box-shadow: var(--santa-shadow);
+}
+
+.theme-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    border-radius: .5rem;
+    font-size: .875rem;
+}
+
+.user-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Page headers */
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.page-title {
+    margin: 0;
+    font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.page-subtitle {
+    order: 3;
+    flex: 0 0 100%;
+    margin: -.5rem 0 0;
+    color: var(--santa-muted);
+}
+
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+/* Surfaces */
+
+.card,
+.table-responsive,
+.modal-content,
+.list-group {
+    border: 1px solid var(--santa-border);
+    border-radius: var(--santa-radius);
+    background: var(--santa-surface);
+    box-shadow: var(--santa-shadow);
+}
+
+.card {
+    --bs-card-bg: var(--santa-surface);
+    --bs-card-border-width: 0;
+    --bs-card-cap-bg: transparent;
+    overflow: hidden;
+}
+
+.card-header,
+.card-header-santa {
+    border-bottom: 1px solid var(--santa-border);
+    background: transparent !important;
+    color: var(--santa-accent-text) !important;
+    font-size: .75rem;
+    letter-spacing: .06em;
+}
+
+.card .display-4 {
+    font-weight: 700;
+    letter-spacing: -.03em;
+}
+
+.list-group {
+    --bs-list-group-bg: transparent;
+    --bs-list-group-border-color: var(--santa-border);
+    overflow: hidden;
+}
+
+.card .list-group,
+.modal .list-group {
+    border-radius: calc(var(--santa-radius) - .25rem);
+    box-shadow: none;
+}
+
+.text-santa {
+    color: var(--santa-accent-text) !important;
+}
+
+/* Tables */
+
+.table-responsive {
+    margin-bottom: 1.5rem;
+}
+
+.table {
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: var(--santa-surface-muted);
+    --bs-table-border-color: var(--santa-border);
+    margin-bottom: 0 !important;
+}
+
+.table-bordered > :not(caption) > * > * {
+    border-width: 0 0 1px;
+}
+
+.table > tbody > tr:last-child > * {
+    border-bottom-width: 0;
+}
+
+.table > :not(caption) > * > * {
+    padding: .75rem 1rem;
+    vertical-align: middle;
+}
+
+thead th {
+    background: var(--santa-surface-muted) !important;
+    color: var(--santa-muted) !important;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Buttons */
+
+.btn {
+    --bs-btn-font-weight: 500;
+    border-radius: 999px;
+    transition: transform 160ms var(--santa-ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.btn:not(.btn-sm) {
+    --bs-btn-padding-x: 1.125rem;
+}
+
+.btn:active {
+    transform: scale(.97);
+}
+
+.btn-santa,
+.btn-primary,
+.btn-danger {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--santa-accent);
+    --bs-btn-border-color: var(--santa-accent);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--santa-accent-hover);
+    --bs-btn-hover-border-color: var(--santa-accent-hover);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--santa-accent-hover);
+    --bs-btn-active-border-color: var(--santa-accent-hover);
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--santa-accent);
+    --bs-btn-disabled-border-color: var(--santa-accent);
+}
+
+/* Row actions stay quiet so a table of them doesn't turn red */
+.table .btn-santa {
+    --bs-btn-color: var(--santa-accent-text);
+    --bs-btn-bg: var(--santa-accent-soft);
+    --bs-btn-border-color: transparent;
+}
+
+.btn-success {
+    --bs-btn-bg: var(--santa-green);
+    --bs-btn-border-color: var(--santa-green);
+    --bs-btn-hover-bg: var(--santa-green-hover);
+    --bs-btn-hover-border-color: var(--santa-green-hover);
+    --bs-btn-active-bg: var(--santa-green-hover);
+    --bs-btn-active-border-color: var(--santa-green-hover);
+}
+
+.btn-outline-primary,
+.btn-outline-danger {
+    --bs-btn-color: var(--santa-accent-text);
+    --bs-btn-border-color: currentColor;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: var(--santa-accent);
+    --bs-btn-hover-border-color: var(--santa-accent);
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: var(--santa-accent-hover);
+    --bs-btn-active-border-color: var(--santa-accent-hover);
+}
+
+.btn-secondary,
+.btn-outline-secondary {
+    --bs-btn-color: var(--santa-ink);
+    --bs-btn-bg: var(--santa-surface);
+    --bs-btn-border-color: var(--santa-border);
+    --bs-btn-hover-color: var(--santa-ink);
+    --bs-btn-hover-bg: var(--santa-surface-muted);
+    --bs-btn-hover-border-color: var(--santa-border);
+    --bs-btn-active-color: var(--santa-ink);
+    --bs-btn-active-bg: var(--santa-surface-muted);
+    --bs-btn-active-border-color: var(--santa-border);
+}
+
+/* Badges */
+
+.badge {
+    padding: .375em .75em;
+    font-weight: 600;
+    letter-spacing: .01em;
+}
+
+.badge.text-bg-success,
+.badge.bg-success { background: rgba(26, 127, 75, .12) !important; color: var(--santa-green) !important; }
+.badge.text-bg-danger,
+.badge.bg-danger { background: var(--santa-accent-soft) !important; color: var(--santa-accent-text) !important; }
+
+[data-bs-theme="dark"] .badge.text-bg-success,
+[data-bs-theme="dark"] .badge.bg-success { color: #4ade80 !important; }
+
+/* Forms and modals */
+
+.form-control,
+.form-select {
+    border-radius: .625rem;
+    border-color: var(--santa-border);
+    background-color: var(--santa-surface);
+}
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--santa-accent);
+    box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+}
+
+.form-check-input:checked {
+    border-color: var(--santa-accent);
+    background-color: var(--santa-accent);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+.modal {
+    --bs-modal-bg: var(--santa-surface);
+    --bs-modal-border-width: 0;
+    --bs-modal-header-border-color: var(--santa-border);
+    --bs-modal-footer-border-color: var(--santa-border);
+}
+
+.modal-backdrop {
+    --bs-backdrop-opacity: .35;
+}
+
+.modal-title {
+    font-weight: 600;
+}
+
+/* Path regex builder (static/js/path_regex.js) */
+
+.regex-builder {
+    margin-top: .5rem;
+    padding: 1rem;
+    border: 1px solid var(--santa-border);
+    border-radius: .75rem;
+    background: var(--santa-surface-muted);
+}
+
+.regex-builder-row + .regex-builder-row {
+    margin-top: .5rem;
+}
+
+.regex-builder-row .form-select {
+    flex: 0 0 11rem;
+}
+
+.regex-builder-preview {
+    word-break: break-all;
+    color: var(--santa-ink);
+}
+
+/* DataTables and pagination */
+
+.pagination {
+    --bs-pagination-color: var(--santa-ink);
+    --bs-pagination-bg: var(--santa-surface);
+    --bs-pagination-border-color: var(--santa-border);
+    --bs-pagination-hover-color: var(--santa-ink);
+    --bs-pagination-hover-bg: var(--santa-surface-muted);
+    --bs-pagination-focus-box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+    --bs-pagination-active-bg: var(--santa-accent);
+    --bs-pagination-active-border-color: var(--santa-accent);
+}
+
+#loading {
+    color: var(--santa-muted);
+}
+
+/* Footer */
+
+.app-footer {
+    padding: 2rem 1rem;
+    color: var(--santa-muted);
+    font-size: .875rem;
+    text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn:active,
+    .theme-toggle:active {
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .app-header {
+        background: var(--santa-surface);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}

@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% from '_settings_form.html' import settings_fields %}
+
+{% block title %}Devices{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Devices</h1>
+    </div>
+
+    <!-- Search Box for Hostname -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="hostnameSearch" class="form-label">Search by Hostname</label>
+            <input type="text" id="hostnameSearch" class="form-control" placeholder="Enter Hostname">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Hostname</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Mode</th>
+                    <th>Santa Version</th>
+                    <th>OS Version</th>
+                    <th>Model Identifier</th>
+                    <th>Serialnumber</th>
+                    <th>Last Updated</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="devicesTableBody">
+                <!-- Devices will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Edit Device -->
+    <div class="modal fade" id="editDeviceModal" tabindex="-1" aria-labelledby="editDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <form id="editDeviceForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editDeviceModalLabel">Edit Device</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="hidden" id="identifier" name="identifier">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="fw-bold">Identifier</label>
+                                <small class="d-block" id="identifier_display"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Last Updated</label>
+                                <small class="d-block" id="last_updated"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Hostname</label>
+                                <small class="d-block" id="hostname"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Last Clean Sync</label>
+                                <small class="d-block" id="last_clean_sync"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Signing ID Rules</label>
+                                <small class="d-block" id="signingid_rule_count"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Last Clean Sync</label>
+                                <small class="d-block" id="last_clean_sync"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Model Identifier</label>
+                                <small class="d-block" id="model_identifier"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">CDHash Rules</label>
+                                <small class="d-block" id="cdhash_rule_count"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Primary User</label>
+                                <small class="d-block" id="primary_user"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Role</label>
+                                <small class="d-block" id="primary_user_role"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Team ID Rules</label>
+                                <small class="d-block" id="teamid_rule_count"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">OS Version</label>
+                                <small class="d-block" id="os_version"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Compiler Rules</label>
+                                <small class="d-block" id="compiler_rule_count"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">OS Build</label>
+                                <small class="d-block" id="os_build"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Binary Rules</label>
+                                <small class="d-block" id="binary_rule_count"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Santa Version</label>
+                                <small class="d-block" id="santa_version"></small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Client Mode</label>
+                                <select class="form-select" id="client_mode" name="client_mode">
+                                    {% for value, name in options.CLIENT_MODES.items() %}
+                                    <option value="{{ value }}">{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Reported by the device: <span id="reported_client_mode"></span></div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="fw-bold">Last Sync</label>
+                                <small class="d-block" id="last_sync"></small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="fw-bold">Clean sync</h6>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-8">
+                                <select class="form-select" id="requested_sync_type">
+                                    <option value="">No clean sync requested</option>
+                                    {% for value, label in options.REQUESTED_SYNC_TYPES.items() %}
+                                    <option value="{{ value }}">{{ value }} - {{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Sent on the device's next sync and cleared once it completes.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-secondary w-100" id="requestCleanSyncBtn">Update Request</button>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="fw-bold">Setting overrides</h6>
+                        <p class="form-text">Leave a field empty to use the global value from Settings.</p>
+                        <div id="deviceSettings">
+                            {{ settings_fields(options, "Global") }}
+                        </div>
+                        <div class="text-end mt-3">
+                            <button type="button" class="btn btn-outline-secondary" id="saveDeviceSettingsBtn">Save Overrides</button>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer mt-3">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-santa">Save Client Mode</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading">Loading more devices...</div>
+{% endblock %}
+
+{% block content_scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/settings_form.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/path_regex.js') }}"></script>
+    <script>
+        const clientModeNames = {{ options.CLIENT_MODES|tojson }};
+        let nextCursor = null;
+        let loading = false;
+        let hostnameQuery = "";
+    
+        function loadDevices(reset = false) {
+            if (loading || nextCursor === false) return;
+            loading = true;
+            $("#loading").show();
+    
+            if (reset) {
+                $("#devicesTableBody").empty();
+                nextCursor = null;
+            }
+    
+            $.get("/admin/load_devices", { cursor: nextCursor, hostname: hostnameQuery }, function(response) {
+                if (response.data.length > 0) {
+                    response.data.forEach(device => {
+                        const clientModeText = clientModeNames[device.client_mode] || device.client_mode || "UNKNOWN";
+
+                        let row = `
+                            <tr>
+                                <td>${escapeHtml((device.hostname || "").split('.')[0])}</td>
+                                <td>${escapeHtml(device.primary_user)}</td>
+                                <td><span class="badge text-bg-success">${escapeHtml(device.primary_user_role)}</span></td>
+                                <td>${escapeHtml(clientModeText)}</td>
+                                <td>${escapeHtml(device.santa_version)}</td>
+                                <td>${escapeHtml(device.os_version)}</td>
+                                <td>${escapeHtml(device.model_identifier)}</td>
+                                <td>${escapeHtml(device.serial_num)}</td>
+                                <td>${escapeHtml(device.last_updated)}</td>
+                                <td>
+                                    <button class="btn  btn-sm btn-santa  edit-rule-btn" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editDeviceModal" 
+                                            data-identifier="${escapeHtml(device.identifier)}">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        $("#devicesTableBody").append(row);
+                    });
+
+                    nextCursor = response.next_cursor;
+                } else {
+                    nextCursor = false;
+                }
+
+                $("#loading").hide();
+                loading = false;
+            });
+        }
+    
+        $(document).ready(function() {
+            loadDevices();  // Load first batch
+    
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadDevices();
+                }
+            });
+    
+            // Trigger search only when Enter is pressed
+            $("#hostnameSearch").on("keypress", function(event) {
+                if (event.key === "Enter") {
+                    hostnameQuery = $(this).val().trim();
+                    loadDevices(true);
+                    event.preventDefault(); // Prevents form submission (if inside a form)
+                }
+            });
+
+            $("#devicesTableBody").on("click", ".edit-rule-btn", function() {
+                let deviceId = $(this).data("identifier");
+
+                $.getJSON(`/admin/devices/${encodeURIComponent(deviceId)}`, function(data) {
+                    $("#identifier").val(data.identifier || "");
+                    $("#identifier_display").text(data.identifier || "");
+                    $("#hostname").text(data.hostname || "");
+                    $("#primary_user").text(data.primary_user || "");
+                    $("#primary_user_role").text(data.primary_user_role || "");
+                    $("#serial_num").text(data.serial_num || "");
+                    $("#model_identifier").text(data.model_identifier || "");
+                    $("#os_version").text(data.os_version || "");
+                    $("#os_build").text(data.os_build || "");
+                    $("#santa_version").text(data.santa_version || "");
+                    $("#client_mode").val(String(data.client_mode || "2"));
+                    $("#last_clean_sync").text(data.last_clean_sync || "");
+                    $("#last_updated").text(data.last_updated || "");
+                    $("#binary_rule_count").text(data.binary_rule_count || 0);
+                    $("#cdhash_rule_count").text(data.cdhash_rule_count || 0);
+                    $("#compiler_rule_count").text(data.compiler_rule_count || 0);
+                    $("#teamid_rule_count").text(data.teamid_rule_count || 0);
+                    $("#signingid_rule_count").text(data.signingid_rule_count || 0);
+                    $("#reported_client_mode").text(clientModeNames[data.reported_client_mode] || "unknown");
+                    $("#last_sync").text(data.last_sync || "");
+                    $("#requested_sync_type").val(data.requested_sync_type || "");
+                    fillSettingsForm(document.getElementById("deviceSettings"), data.settings);
+                });
+            });
+
+            function postDeviceUpdate(url, payload) {
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(payload),
+                    success: function(response) { alert(response.message); },
+                    error: function(xhr) {
+                        const message = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText;
+                        alert("Failed to update device: " + message);
+                    }
+                });
+            }
+
+            $("#requestCleanSyncBtn").click(function() {
+                const identifier = encodeURIComponent($("#identifier").val());
+                postDeviceUpdate(`/admin/devices/${identifier}/clean_sync`, {sync_type: $("#requested_sync_type").val()});
+            });
+
+            $("#saveDeviceSettingsBtn").click(function() {
+                const identifier = encodeURIComponent($("#identifier").val());
+                postDeviceUpdate(`/admin/devices/${identifier}/settings`, readSettingsForm(document.getElementById("deviceSettings")));
+            });
+
+            $("#editDeviceForm").submit(function(event){
+                event.preventDefault();
+                
+                $.ajax({
+                    url: "/admin/save_device",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        identifier: $("#identifier").val(),
+                        client_mode: parseInt($("#client_mode").val(), 10)
+                    }),
+                    success: function(response) {
+                        alert(response.message);
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById("editDeviceModal")).hide();
+                        location.reload();  // Reload the page to update the table
+                    },
+                    error: function(xhr) {
+                        alert("Failed to update device: " + xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

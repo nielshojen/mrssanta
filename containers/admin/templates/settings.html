@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% from '_settings_form.html' import settings_fields %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">
+        Sent to every device at preflight. Devices can override these individually from the Devices page.
+    </p>
+    </div>
+
+    <form id="settingsForm" style="max-width: 1100px;">
+        {{ settings_fields(options, "Default", show_default_client_mode=True) }}
+
+        <div class="text-end mt-4">
+            <button type="submit" class="btn btn-santa">Save Settings</button>
+        </div>
+    </form>
+
+    <section class="card mt-5" style="max-width: 1100px;" id="malwarebazaar">
+        <div class="card-header fw-bold">MalwareBazaar</div>
+        <div class="card-body">
+            <p class="card-text">
+                Check every binary in <a href="/admin/events">Events</a> against
+                <a href="https://bazaar.abuse.ch/" target="_blank" rel="noopener noreferrer">MalwareBazaar</a>,
+                abuse.ch's database of malware samples. Matches are listed on the
+                <a href="/admin/review">Review</a> page, where you can block them on all devices.
+                The list of macOS samples is downloaded and checked locally, so no hashes leave your server.
+                Get a free Auth-Key from the
+                <a href="https://auth.abuse.ch/" target="_blank" rel="noopener noreferrer">abuse.ch Authentication Portal</a>.
+            </p>
+
+            <p class="mb-3" id="malwarebazaarStatus">
+                {% if malwarebazaar.enabled %}
+                    <span class="badge text-bg-success">On</span>
+                    {% if malwarebazaar.list_refreshed_at %}
+                        <span class="text-body-secondary ms-2">{{ "{:,}".format(malwarebazaar.list_size or 0) }} macOS samples, list updated {{ malwarebazaar.list_refreshed_at.strftime("%Y-%m-%d %H:%M") }} UTC</span>
+                    {% else %}
+                        <span class="text-body-secondary ms-2">Waiting for the first download</span>
+                    {% endif %}
+                    {% if malwarebazaar.last_error %}
+                        <br><span class="text-danger">Last check failed: {{ malwarebazaar.last_error }}</span>
+                    {% endif %}
+                {% else %}
+                    <span class="badge text-bg-secondary">Off</span>
+                {% endif %}
+            </p>
+
+            <form id="malwarebazaarForm" class="row g-2 align-items-end" autocomplete="off">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold" for="malwarebazaarKey">Auth-Key</label>
+                    <input type="password" class="form-control font-monospace" id="malwarebazaarKey"
+                        placeholder="{{ 'Saved. Enter a new key to replace it' if malwarebazaar.enabled else 'Paste your abuse.ch Auth-Key' }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-santa">{{ 'Replace key' if malwarebazaar.enabled else 'Turn on' }}</button>
+                </div>
+                {% if malwarebazaar.enabled %}
+                <div class="col-auto">
+                    <button type="button" class="btn btn-outline-danger" id="malwarebazaarOff">Turn off</button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </section>
+{% endblock %}
+
+{% block content_scripts %}
+    <script src="{{ url_for('static', filename='js/settings_form.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/path_regex.js') }}"></script>
+    <script>
+        const form = document.getElementById("settingsForm");
+        fillSettingsForm(form, {{ settings|tojson }});
+
+        form.addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const response = await fetch("/admin/settings", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(readSettingsForm(form)),
+            });
+            const result = await response.json();
+            alert(result.message);
+        });
+
+        async function saveMalwareBazaarKey(apiKey) {
+            const response = await fetch("/admin/settings/malwarebazaar", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({api_key: apiKey}),
+            });
+            const result = await response.json();
+            alert(result.message);
+            if (result.success) location.reload();
+        }
+
+        document.getElementById("malwarebazaarForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const apiKey = document.getElementById("malwarebazaarKey").value.trim();
+            if (!apiKey) {
+                alert("Enter an Auth-Key");
+                return;
+            }
+            saveMalwareBazaarKey(apiKey);
+        });
+
+        document.getElementById("malwarebazaarOff")?.addEventListener("click", function() {
+            if (confirm("Turn off the MalwareBazaar feed? Binaries already flagged stay on the Review page.")) {
+                saveMalwareBazaarKey("");
+            }
+        });
+    </script>
+{% endblock %}

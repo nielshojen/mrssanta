@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Application Not Found - Santa{% endblock %}
+
+{% block nav_links %}
+<a class="nav-link" href="/santa/moreinfo">More Info</a>
+{% endblock %}
+
+{% block content %}
+<section class="section-card status-strip is-warning p-4 p-lg-5">
+  <p class="eyebrow mb-2">Application Rules</p>
+  <h1 class="h3 mb-3">Application details are not available yet</h1>
+  <p class="text-secondary mb-4">
+    Santa does not have enough information about this binary file. Your Mac may not have uploaded the details yet, so try again after the next sync.
+  </p>
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{{ response.called_url }}" class="btn btn-primary">Try Again</a>
+    <a href="/santa/moreinfo" class="btn btn-outline-secondary">More Info</a>
+  </div>
+
+  <hr>
+
+  <p class="mb-2">If the problem persists, contact ServiceDesk.</p>
+  <div class="d-flex flex-wrap gap-2">
+    {% if response.support_phone %}
+    <a href="tel:{{ response.support_phone }}" class="btn btn-outline-secondary">{{ response.support_phone }}</a>
+    {% endif %}
+    {% if response.support_email %}
+    <a href="mailto:{{ response.support_email }}" class="btn btn-outline-secondary">{{ response.support_email }}</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
