@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#ff5050">
+    <script>
+        // Theme choice is "system" (default), "light" or "dark". Applied before
+        // first paint; "system" follows the OS setting, including live changes.
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+        function themeChoice() {
+            let saved = null;
+            try { saved = localStorage.getItem("theme"); } catch (e) {}
+            return saved === "light" || saved === "dark" ? saved : "system";
+        }
+
+        function applyTheme() {
+            const choice = themeChoice();
+            const theme = choice === "system" ? (systemDark.matches ? "dark" : "light") : choice;
+            document.documentElement.setAttribute("data-bs-theme", theme);
+        }
+
+        applyTheme();
+        systemDark.addEventListener("change", applyTheme);
+    </script>
+    <title>Mrs Santa - {% block title %}{% endblock %}</title>
+
+    <link rel="manifest" href="{{ url_for('static', filename='manifest/site.webmanifest') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    
+    {% include 'navbar.html' %}
+
+    <main class="container-fluid app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include 'footer.html' %}
+
+    <script>
+        const themeIcons = {system: "bi-circle-half", light: "bi-sun", dark: "bi-moon"};
+
+        function showThemeChoice() {
+            const choice = themeChoice();
+            document.getElementById("themeIcon").className = "bi " + themeIcons[choice];
+            document.querySelectorAll("[data-theme-choice]").forEach(function (item) {
+                const selected = item.dataset.themeChoice === choice;
+                item.classList.toggle("active", selected);
+                item.setAttribute("aria-pressed", selected);
+            });
+        }
+
+        document.querySelectorAll("[data-theme-choice]").forEach(function (item) {
+            item.addEventListener("click", function () {
+                try {
+                    if (item.dataset.themeChoice === "system") {
+                        localStorage.removeItem("theme");
+                    } else {
+                        localStorage.setItem("theme", item.dataset.themeChoice);
+                    }
+                } catch (e) {}
+                applyTheme();
+                showThemeChoice();
+            });
+        });
+
+        showThemeChoice();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // CSRF: every state-changing request carries the token from the meta
+        // tag. fetch() is wrapped here; jQuery is configured after the page
+        // scripts below have loaded it.
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const csrfSafeMethods = ["GET", "HEAD", "OPTIONS", "TRACE"];
+
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = function(input, init = {}) {
+            const method = (init.method || "GET").toUpperCase();
+            if (!csrfSafeMethods.includes(method)) {
+                init.headers = new Headers(init.headers || {});
+                init.headers.set("X-CSRFToken", csrfToken);
+            }
+            return originalFetch(input, init);
+        };
+
+        // Escape values from the database (many originate from Santa clients,
+        // e.g. file names) before inserting them into HTML.
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return "";
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+    </script>
+
+{% block content_scripts %}{% endblock %}
+
+    <script>
+        if (window.jQuery) {
+            jQuery.ajaxPrefilter(function(options) {
+                if (!csrfSafeMethods.includes((options.type || "GET").toUpperCase())) {
+                    options.headers = Object.assign({}, options.headers, {"X-CSRFToken": csrfToken});
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

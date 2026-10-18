@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+
+{% block title %}Review{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+        <h1 class="page-title">Review</h1>
+    </div>
+
+    {% if flagged_events %}
+    <h2 class="h5 mb-3">Known malware</h2>
+    <p class="text-body-secondary">Binaries seen on your devices that MalwareBazaar lists as malware.</p>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-5" id="flaggedEvents">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>SHA-256</th>
+                    <th>Decision</th>
+                    <th>Malware family</th>
+                    <th>Flagged</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in flagged_events %}
+                <tr>
+                    <td>{{ event.file_name }}</td>
+                    <td class="font-monospace small text-break">
+                        <a href="/admin/events/{{ event._id }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">{{ event._id }}</a>
+                    </td>
+                    <td>{{ event.decision }}</td>
+                    <td>
+                        <a href="https://bazaar.abuse.ch/sample/{{ event._id }}/" target="_blank" rel="noopener noreferrer">{{ event.malwarebazaar.signature or "Unknown" }}</a>
+                    </td>
+                    <td class="text-nowrap">{{ event.malwarebazaar.flagged_at.strftime("%Y-%m-%d %H:%M") if event.malwarebazaar.flagged_at else "" }}</td>
+                    <td class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-danger flagged-btn" data-sha="{{ event._id }}" data-block="true">Block everywhere</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary flagged-btn" data-sha="{{ event._id }}" data-block="false">Dismiss</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="h5 mb-3">Allow rules</h2>
+    {% endif %}
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Identifier</th>
+                    <th>Custom Message</th>
+                    <th>Rule Type</th>
+                    <th>Policy</th>
+                    <th>Scope</th>
+                    <th>Assigned</th>
+                    <th>Converted</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                <tr>
+                    <td>
+                        {% if rule.identifier and rule.identifier|length == 64 %}
+                        <a href="/admin/events/{{ rule.identifier }}" class="text-decoration-none text-reset" target="_blank" rel="noopener noreferrer">{{ rule.identifier }}</a>
+                        {% else %}
+                        {{ rule.identifier }}
+                        {% endif %}
+                    </td>
+                    <td>{{ rule.custom_msg }}</td>
+                    <td>{{ rule.rule_type }}</td>
+                    <td>{{ rule.policy }}</td>
+                    <td>{{ rule.scope }}</td>
+                    <td>{{ rule.assigned | count }}</td>
+                    {% if rule.converted %}
+                    <td>{{ rule.converted }}</td>
+                    {% else %}
+                    <td>False</td>
+                    {% endif %}
+                    <td>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-primary edit-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editRuleModal"
+                            data-rule-id="{{ rule._id }}"
+                            data-identifier="{{ rule.identifier | e }}"
+                            data-custom-message="{{ (rule.custom_msg or '') | e }}"
+                            data-rule-type="{{ rule.rule_type | e }}"
+                            data-policy="{{ rule.policy | e }}"
+                            data-scope="{{ rule.scope | e }}"
+                        >
+                        Edit
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-success approve-btn"
+                            data-rule-id="{{ rule._id }}"
+                        >
+                        Approve
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}    
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Edit Rule -->
+    <div class="modal fade" id="editRuleModal" tabindex="-1" aria-labelledby="editRuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editRuleForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editRuleModalLabel">Edit Rule</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="ruleId" name="identifier">
+
+                        <div class="mb-3">
+                            <label class="form-label">Identifier</label>
+                            <input type="text" class="form-control" id="identifier" name="identifier" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Policy</label>
+                            <select class="form-select" id="policy" name="action">
+                                <option value="ALLOWLIST" selected>Allow</option>
+                                <option value="ALLOWLIST_COMPILER">Allow Compiler</option>
+                                <option value="BLOCKLIST">Block</option>
+                                <option value="SILENT_BLOCKLIST">Silent Block</option>
+                                <option value="SILENT_GUI_BLOCKLIST">Silent Block (no GUI notification)</option>
+                                <option value="SILENT_TTY_BLOCKLIST">Silent Block (no terminal message)</option>
+                                <option value="REMOVE">Remove</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Rule Type</label>
+                            <select class="form-select" id="rule_type" name="evaluation">
+                                <option value="BINARY">Binary</option>
+                                <option value="CERTIFICATE">Certificate</option>
+                                <option value="TEAMID">Team ID</option>
+                                <option value="SIGNINGID">Signing ID</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Scope</label>
+                            <select class="form-select" id="scope" name="scope">
+                                <option value="global">Global</option>
+                                <option value="managedapp">Managed App</option>
+                                <option value="machine">Machine</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Custom Message</label>
+                            <input type="text" class="form-control" id="custom_message" name="custom_message">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-santa ">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block content_scripts %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const modalEl = document.getElementById("editRuleModal");
+
+  modalEl.addEventListener("show.bs.modal", (event) => {
+    const btn = event.relatedTarget;
+    if (!btn) return;
+
+    document.getElementById("ruleId").value = btn.getAttribute("data-rule-id") || "";
+    document.getElementById("identifier").value = btn.getAttribute("data-identifier") || "";
+    document.getElementById("custom_message").value = btn.getAttribute("data-custom-message") || "";
+
+    document.getElementById("rule_type").value = btn.getAttribute("data-rule-type") || "BINARY";
+    document.getElementById("policy").value = btn.getAttribute("data-policy") || "ALLOWLIST";
+    document.getElementById("scope").value = btn.getAttribute("data-scope") || "global";
+  });
+
+  $("#editRuleForm").on("submit", function (event) {
+    event.preventDefault();
+
+    const payload = {
+      evaluation: $("#rule_type").val(),
+      identifier: $("#identifier").val(),
+      action: $("#policy").val(),
+      scope: $("#scope").val(),
+      custom_message: $("#custom_message").val()
+    };
+
+    if (!payload.evaluation || !payload.identifier) {
+      alert("Evaluation and Identifier are required");
+      return;
+    }
+
+    $.ajax({
+      url: "/admin/save_rule",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(payload),
+      success: function (response) {
+        alert(response.message || "Rule saved");
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("editRuleModal")).hide();
+        location.reload();
+      },
+      error: function (xhr) {
+        // try to show JSON message if present
+        let msg = xhr.responseText || "Unknown error";
+        try {
+          const j = JSON.parse(xhr.responseText);
+          msg = j.message || msg;
+        } catch (e) {}
+        alert("Failed to save rule: " + msg);
+      }
+    });
+  });
+
+  $(document).on("click", ".flagged-btn", function () {
+    const sha = $(this).data("sha");
+    const block = $(this).data("block") === true;
+    const question = block
+      ? "Add a global block rule for this binary?"
+      : "Dismiss this match? The binary keeps whatever rules it has.";
+    if (!confirm(question)) return;
+
+    $.ajax({
+      url: `/admin/malwarebazaar/${encodeURIComponent(sha)}/review`,
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ block: block }),
+      success: function (response) {
+        alert(response.message);
+        location.reload();
+      },
+      error: function (xhr) {
+        let msg = xhr.responseText || "Unknown error";
+        try { msg = JSON.parse(xhr.responseText).message || msg; } catch (e) {}
+        alert("Failed: " + msg);
+      }
+    });
+  });
+
+  $(function () {
+    $(document).on("click", ".approve-btn", function () {
+      const ruleId = $(this).data("rule-id");
+      if (!ruleId) {
+        alert("Missing rule id");
+        return;
+      }
+
+      if (!confirm("Mark this rule as reviewed?")) return;
+
+      $.ajax({
+        url: "/admin/approve_rule",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ id: ruleId }),
+        success: function (response) {
+          alert(response.message || "Rule approved");
+          location.reload();
+        },
+        error: function (xhr) {
+          alert("Failed to approve rule: " + (xhr.responseText || ""));
+        }
+      });
+    });
+  });
+});
+</script>
+{% endblock %}

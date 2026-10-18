@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% macro detail(label, value, break_value=False) %}
+{% if value %}
+<div class="detail-row">
+  <dt>{{ label }}</dt>
+  <dd class="{% if break_value %}text-break{% endif %}">{{ value }}</dd>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro status_badge(label, tone) %}
+<span class="badge rounded-pill text-bg-{{ tone }}">{{ label }}</span>
+{% endmacro %}
+
+{% set has_binary = response.binary is defined %}
+{% if has_binary %}
+{% set vt_status = response.binary.virustotal_result|default(0) %}
+{% set has_rule = response.ruleexists|default(false) %}
+{% set rule = response.rule|default({}) %}
+{% set rule_scope = rule.scope|default("") %}
+{% set rule_policy = rule.policy|default("") %}
+{% set app_name = response.binary.file_bundle_name|default(response.binary.file_name, true) %}
+{% set machine_name = response.device.hostname.split(".")[0] if response.device is defined and response.device.hostname is defined and response.device.hostname else "this Mac" %}
+{# Whether the user may request access is decided on the server (voting.allow_decision). #}
+{% set allow = response.allow|default({"allowed": false, "reason": "Open this page from the link in Santa's block dialog."}, true) %}
+{% set allow_action = allow.action if allow.allowed else none %}
+{% endif %}
+
+{% block title %}Application Rules - Santa{% endblock %}
+
+{% block nav_links %}
+<a class="nav-link active" aria-current="page" href="{{ response.called_url }}">Details</a>
+<a class="nav-link" href="/santa/moreinfo">More Info</a>
+{% endblock %}
+
+{% block content %}
+{% if not has_binary %}
+<section class="section-card p-4 p-lg-5">
+  <p class="eyebrow mb-2">Application Rules</p>
+  <h1 class="h3 mb-3">No application details found</h1>
+  <p class="text-secondary mb-0">Santa did not receive enough information to show this request. Try again after your Mac has synced.</p>
+</section>
+{% else %}
+<div class="page-heading mb-4">
+  <p class="eyebrow mb-2">Application Rules</p>
+  <h1 class="display-6 fw-semibold mb-3">Review {{ app_name|default("this application", true) }}</h1>
+  <p class="lead text-secondary mb-0">
+    Confirm whether this app should be allowed to run on {{ machine_name }}.
+  </p>
+</div>
+
+<section class="section-card status-strip {% if vt_status == 2 %}is-danger{% elif vt_status == 0 %}is-warning{% endif %} p-4 mb-4">
+  <div class="d-flex flex-column flex-lg-row gap-3 justify-content-between">
+    <div>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        {% if vt_status == 2 %}
+        {{ status_badge("Malicious", "danger") }}
+        {% elif vt_status == 1 %}
+        {{ status_badge("Safe", "success") }}
+        {% else %}
+        {{ status_badge("No scan available", "warning") }}
+        {% endif %}
+
+        {% if has_rule %}
+        {{ status_badge(rule_scope|default("Rule", true)|title ~ " rule", "secondary") }}
+        {{ status_badge(rule_policy|default("Policy", true)|title, "light") }}
+        {% else %}
+        {{ status_badge("No matching rule", "secondary") }}
+        {% endif %}
+      </div>
+      <h2 class="h4 mb-1">{{ response.binary.file_name|default(app_name, true) }}</h2>
+      {% if response.binary.file_path %}
+      <p class="text-secondary text-break mb-0">{{ response.binary.file_path }}</p>
+      {% endif %}
+    </div>
+    {% if vt_status in [1, 2] and response.binary.file_sha256 %}
+    <div class="d-flex align-items-start">
+      <a class="btn {% if vt_status == 2 %}btn-danger{% else %}btn-success{% endif %}" href="https://www.virustotal.com/gui/file/{{ response.binary.file_sha256 }}" target="_blank" rel="noopener noreferrer">
+        Show Scan Results
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-7">
+    <section class="section-card p-4 mb-4">
+      <h2 class="h5 mb-3">Application Summary</h2>
+      <dl class="detail-list">
+        {{ detail("Bundle", response.binary.file_bundle_name) }}
+        {{ detail("Version", response.binary.file_bundle_version) }}
+        {{ detail("Local path", response.binary.file_path ~ "/" ~ response.binary.file_name if response.binary.file_path and response.binary.file_name else none, true) }}
+        {% if response.binary.signing_chain and response.binary.signing_chain|length > 0 %}
+        {{ detail("Signed by", response.binary.signing_chain[0].org ~ " (" ~ response.binary.signing_chain[0].ou ~ ")") }}
+        {% endif %}
+        {% if vt_status == 2 %}
+        {{ detail("VirusTotal scan", "Malicious") }}
+        {% elif vt_status == 1 %}
+        {{ detail("VirusTotal scan", "Safe") }}
+        {% else %}
+        {{ detail("VirusTotal scan", "No scan available") }}
+        {% endif %}
+      </dl>
+
+      {% if response.binary.file_path and "homebrew" in response.binary.file_path|lower %}
+      <div class="alert alert-info mt-4 mb-0">
+        <div class="fw-semibold">Homebrew package detected</div>
+        <p class="mb-2">Make sure you are running the newest version before allowing it.</p>
+        <pre class="code-block"><code>brew update
+brew upgrade</code></pre>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col-lg-5">
+    <section class="section-card p-4 mb-4">
+      {% if has_rule %}
+        {% if rule_scope == "global" and rule_policy == "BLOCKLIST" %}
+        <h2 class="h5 mb-3">Blocked Globally</h2>
+        <p class="text-secondary mb-0">
+          {{ rule.custom_msg if rule.custom_msg else response.binary.file_name ~ " is blocked by " ~ response.organization ~ " and is not allowed to run." }}
+        </p>
+        {% elif rule_scope == "global" and rule_policy == "ALLOWLIST" %}
+        <h2 class="h5 mb-3">Already Allowed</h2>
+        <p class="text-secondary mb-0">
+          {{ "Rule Description: " ~ rule.custom_msg if rule.custom_msg else response.binary.file_name ~ " is already allowed globally by " ~ response.organization ~ "." }}
+        </p>
+        {% elif rule_scope == "managedapp" and rule_policy == "ALLOWLIST" and not response.machine_assigned %}
+        <h2 class="h5 mb-3">Managed App Required</h2>
+        <p class="text-secondary mb-0">
+          {{ rule.custom_msg if rule.custom_msg else response.binary.file_name ~ " is only allowed when installed by " ~ response.selfserviceapp ~ "." }}
+        </p>
+        {% elif rule_scope == "managedapp" and rule_policy == "ALLOWLIST" %}
+        <h2 class="h5 mb-3">Managed App Allowed</h2>
+        <p class="text-secondary mb-0">{{ response.binary.file_name }} is already allowed because it was installed by {{ response.selfserviceapp }}.</p>
+        {% elif rule_scope == "managedapp" and rule_policy == "BLOCKLIST" %}
+        <h2 class="h5 mb-3">Blocked</h2>
+        <p class="text-secondary mb-0">
+          {{ rule.custom_msg if rule.custom_msg else response.binary.file_name ~ " is not allowed to run on a " ~ response.organization ~ " device." }}
+        </p>
+        {% elif rule_scope == "machine" and rule_policy == "ALLOWLIST" %}
+          {% if not allow.allowed %}
+          <h2 class="h5 mb-3">Cannot Add Rule</h2>
+          <p class="text-secondary mb-0">{{ allow.reason }}</p>
+          {% else %}
+          <h2 class="h5 mb-3">Allow On This Mac?</h2>
+          <p class="text-secondary">Allow {{ response.binary.file_name }} to run on {{ machine_name }}.</p>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-success" data-allow-rule>Allow</button>
+            <button type="button" class="btn btn-outline-danger" data-report-rule>Report as Malware</button>
+          </div>
+          <div id="rule-feedback" class="alert mt-3 mb-0 d-none" role="status"></div>
+          {% endif %}
+        {% else %}
+        <h2 class="h5 mb-3">Rule Found</h2>
+        <p class="text-secondary mb-0">A matching {{ rule_scope }} {{ rule_policy }} rule exists for this application.</p>
+        {% endif %}
+      {% else %}
+        {% if not allow.allowed %}
+        <h2 class="h5 mb-3">Cannot Add Rule</h2>
+        <p class="text-secondary mb-0">{{ allow.reason }}</p>
+        {% else %}
+        <h2 class="h5 mb-3">Allow On This Mac?</h2>
+        <p class="text-secondary">Allow {{ response.binary.file_name }} to run on {{ machine_name }}.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-success" data-allow-rule>Allow</button>
+          <button type="button" class="btn btn-outline-danger" data-report-rule>Report as Malware</button>
+        </div>
+        <div id="rule-feedback" class="alert mt-3 mb-0 d-none" role="status"></div>
+        {% endif %}
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<section class="accordion mb-4" id="detailsAccordion">
+  {% if response.device is defined %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#deviceDetails" aria-expanded="false" aria-controls="deviceDetails">
+        More Device Details
+      </button>
+    </h2>
+    <div id="deviceDetails" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
+      <div class="accordion-body">
+        <dl class="detail-list">
+          {{ detail("Hostname", response.device.hostname) }}
+          {{ detail("User", response.device.primary_user) }}
+          {{ detail("OS version", response.device.os_version) }}
+          {{ detail("OS build", response.device.os_build) }}
+          {{ detail("Serial number", response.device.serial_num) }}
+          {{ detail("Model identifier", response.device.model_identifier) }}
+          {{ detail("Santa version", response.device.santa_version) }}
+          {{ detail("Client mode", response.device.client_mode) }}
+          {{ detail("CD hash rules", response.device.cdhash_rule_count) }}
+          {{ detail("Signing ID rules", response.device.signingid_rule_count) }}
+          {{ detail("Binary rules", response.device.binary_rule_count) }}
+          {{ detail("Team ID rules", response.device.teamid_rule_count) }}
+          {{ detail("Compiler rules", response.device.compiler_rule_count) }}
+          {{ detail("Certificate rules", response.device.certificate_rule_count) }}
+          {{ detail("Transitive rules", response.device.transitive_rule_count) }}
+          {{ detail("Request clean sync", response.device.request_clean_sync) }}
+          {{ detail("Machine ID", response.device.machine_id, true) }}
+        </dl>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#binaryDetails" aria-expanded="false" aria-controls="binaryDetails">
+        More Binary Details
+      </button>
+    </h2>
+    <div id="binaryDetails" class="accordion-collapse collapse" data-bs-parent="#detailsAccordion">
+      <div class="accordion-body">
+        <dl class="detail-list">
+          {{ detail("File bundle name", response.binary.file_bundle_name) }}
+          {{ detail("Version", response.binary.file_bundle_version) }}
+          {{ detail("Bundle ID", response.binary.file_bundle_id) }}
+          {{ detail("File name", response.binary.file_name) }}
+          {{ detail("File path", response.binary.file_path, true) }}
+          {{ detail("File bundle version", response.binary.file_bundle_version_string) }}
+          {{ detail("Signing ID", response.binary.signing_id, true) }}
+          {{ detail("Team ID", response.binary.team_id, true) }}
+          {{ detail("File hash", response.binary.file_sha256, true) }}
+          {{ detail("Bundle hash", response.binary.file_bundle_hash, true) }}
+          {{ detail("Bundle executable path", response.binary.file_bundle_executable_rel_path, true) }}
+        </dl>
+
+        {% if response.binary.signing_chain and response.binary.signing_chain|length > 0 %}
+        <h3 class="h6 mt-4 mb-3">Signing Chain</h3>
+        <ol class="list-group list-group-numbered">
+          {% for certificate in response.binary.signing_chain %}
+          <li class="list-group-item">
+            <div class="fw-semibold">{{ certificate.cn }}</div>
+            <div class="small text-secondary text-break">SHA-256: {{ certificate.sha256 }}</div>
+            <div class="small text-secondary">Organization: {{ certificate.org }}</div>
+            <div class="small text-secondary">Organizational Unit: {{ certificate.ou }}</div>
+            <div class="small text-secondary">Valid From: {{ certificate.valid_from }}</div>
+            <div class="small text-secondary">Valid Until: {{ certificate.valid_until }}</div>
+          </li>
+          {% endfor %}
+        </ol>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if allow_action %}
+<script type="application/json" id="allow-rule-payload">
+{{ {
+  "machine_id": allow.machine_id,
+  "file_sha256": response.binary.file_sha256
+} | tojson }}
+</script>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if allow_action %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const allowButton = document.querySelector("[data-allow-rule]");
+    const reportButton = document.querySelector("[data-report-rule]");
+    const feedback = document.getElementById("rule-feedback");
+    const payloadElement = document.getElementById("allow-rule-payload");
+
+    if (!feedback) {
+      return;
+    }
+
+    const showFeedback = (message, type) => {
+      feedback.className = `alert alert-${type} mt-3 mb-0`;
+      feedback.textContent = message;
+    };
+
+    if (reportButton) {
+      reportButton.addEventListener("click", () => {
+        showFeedback("Please contact ServiceDesk if you believe this app is malicious.", "warning");
+      });
+    }
+
+    if (!allowButton || !payloadElement) {
+      return;
+    }
+
+    allowButton.addEventListener("click", async () => {
+      allowButton.disabled = true;
+      showFeedback("Submitting rule request...", "info");
+
+      try {
+        const payload = JSON.parse(payloadElement.textContent);
+        const result = await fetch("/santa/blockables/rule", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const text = await result.text();
+        const data = JSON.parse(text);
+
+        if (data.success) {
+          showFeedback(data.message || "Rule added successfully.", "success");
+          return;
+        }
+
+        allowButton.disabled = false;
+        showFeedback(data.message || "Rule could not be added.", "danger");
+      } catch (error) {
+        allowButton.disabled = false;
+        showFeedback("The rule request could not be completed. Please try again.", "danger");
+      }
+    });
+  });
+</script>
+{% endif %}
+{% endblock %}

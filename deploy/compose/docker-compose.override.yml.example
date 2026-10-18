@@ -1,0 +1,78 @@
+# Copy to docker-compose.override.yml (git ignored) and fill in the values.
+# Compose loads it automatically on top of docker-compose.yml.
+
+x-api-key: &api-key
+  API_KEY: change-me # Santa sends this in the X-API-Key header
+
+x-xsrf: &xsrf
+  XSRF_REQUIRED: "false"
+  XSRF_SECRET: change-me
+
+# Shared by admin and web. Each of them also needs its own Entra app
+# registration and session key, set in its service below.
+x-flask: &flask
+  MSAL_TENANT_ID: ""
+  VT_API_KEY: "" # optional VirusTotal key
+
+x-sync-interval: &sync-interval
+  SYNC_INTERVAL_LOCKDOWN: "60"
+
+x-clean-sync: &clean-sync
+  CLEAN_SYNC_MAX_AGE_DAYS: "30" # also the admin dashboard's "not seen" cutoff
+
+services:
+  api:
+    environment:
+      <<: *api-key
+
+  preflight:
+    environment:
+      <<: [*api-key, *xsrf, *sync-interval, *clean-sync]
+      SYNC_INTERVAL_MONITOR: "14400"
+
+  eventupload:
+    environment:
+      <<: [*api-key, *xsrf]
+      LOGSTASH_TCP_ADDR: "" # optional host:port to forward events to
+
+  ruledownload:
+    environment:
+      <<: [*api-key, *xsrf]
+      BATCH_SIZE: "1000"
+
+  postflight:
+    environment:
+      <<: [*api-key, *xsrf]
+
+  xsrf:
+    environment:
+      <<: [*api-key, *xsrf]
+
+  admin:
+    environment:
+      <<: [*flask, *clean-sync]
+      FLASK_SECRET_KEY: change-me
+      # Admin app registration: only assign the people who manage Santa
+      MSAL_CLIENT_ID: ""
+      MSAL_CLIENT_SECRET: ""
+      MSAL_REDIRECT_URI: http://localhost:8080/admin/token
+
+  web:
+    environment:
+      <<: [*flask, *sync-interval]
+      FLASK_SECRET_KEY: change-me-too
+      # Approval site app registration: users who may request access
+      MSAL_CLIENT_ID: ""
+      MSAL_CLIENT_SECRET: ""
+      MSAL_REDIRECT_URI: http://localhost:8080/santa/token
+      ORGANIZATION: this Organization
+      SUPPORT_EMAIL: ""
+      SUPPORT_PHONE: ""
+      VOTE_THRESHOLD: "3"
+
+  mongo-express:
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: change-me
+      ME_CONFIG_SITE_COOKIESECRET: change-me
+      ME_CONFIG_SITE_SESSIONSECRET: change-me

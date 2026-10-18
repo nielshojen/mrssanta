@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ff5050">
+  <script>
+    (() => {
+      const query = window.matchMedia("(prefers-color-scheme: dark)");
+      const apply = () => document.documentElement.setAttribute("data-bs-theme", query.matches ? "dark" : "light");
+      apply();
+      query.addEventListener("change", apply);
+    })();
+  </script>
+  <title>{% block title %}Santa{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="apple-touch-icon" sizes="180x180" href="/santa/static/apple-touch-icon.png" type="image/x-icon">
+  <link rel="icon" type="image/png" sizes="32x32" href="/santa/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/santa/static/favicon-16x16.png">
+  <link rel="shortcut icon" href="/santa/static/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/santa/static/favicon.ico" type="image/x-icon">
+  <link rel="manifest" href="/santa/static/site.webmanifest">
+  <style>
+    :root {
+      --santa-logo-red: #ff5050;
+      --santa-accent: #d92b2b;
+      --santa-accent-hover: #b82222;
+      --santa-accent-soft: rgba(255, 80, 80, .1);
+      --santa-accent-text: #c42626;
+      --santa-bg: #faf8f7;
+      --santa-surface: #ffffff;
+      --santa-surface-muted: #f6f2f1;
+      --santa-border: rgba(60, 20, 20, .1);
+      --santa-ink: #1c1514;
+      --santa-muted: #6b6261;
+      --santa-green: #1a7f4b;
+      --santa-green-hover: #146a3e;
+      --santa-amber: #b54708;
+      --santa-shadow: 0 1px 2px rgba(40, 10, 10, .04), 0 8px 24px rgba(40, 10, 10, .06);
+      --santa-radius: 1rem;
+      --santa-ease-out: cubic-bezier(.23, 1, .32, 1);
+
+      --bs-body-bg: var(--santa-bg);
+      --bs-body-color: var(--santa-ink);
+      --bs-secondary-color: var(--santa-muted);
+      --bs-border-color: var(--santa-border);
+      --bs-link-color-rgb: 196, 38, 38;
+      --bs-link-hover-color-rgb: 184, 34, 34;
+      --bs-body-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --bs-focus-ring-color: rgba(217, 43, 43, .3);
+      color-scheme: light;
+    }
+
+    [data-bs-theme="dark"] {
+      --santa-accent-soft: rgba(255, 80, 80, .16);
+      --santa-accent-text: #ff6b6b;
+      --santa-bg: #141011;
+      --santa-surface: #1d1819;
+      --santa-surface-muted: #262021;
+      --santa-border: rgba(255, 235, 235, .1);
+      --santa-ink: #f5efee;
+      --santa-muted: #a89e9d;
+      --santa-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+
+      --bs-body-bg: var(--santa-bg);
+      --bs-body-color: var(--santa-ink);
+      --bs-secondary-color: var(--santa-muted);
+      --bs-border-color: var(--santa-border);
+      --bs-link-color-rgb: 255, 107, 107;
+      --bs-link-hover-color-rgb: 255, 138, 138;
+      color-scheme: dark;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(60rem 24rem at 50% -8rem, var(--santa-accent-soft), transparent 70%),
+        var(--santa-bg);
+      color: var(--santa-ink);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    .h1, .h2, .h3, .h4, .h5, .h6, .display-6 {
+      font-weight: 600;
+      letter-spacing: -.02em;
+    }
+
+    .display-6 {
+      font-weight: 700 !important;
+      line-height: 1.1;
+    }
+
+    .lead {
+      font-size: 1.125rem;
+      line-height: 1.55;
+    }
+
+    .app-container {
+      max-width: 1120px;
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 1030;
+      border-bottom: 1px solid var(--santa-border);
+      background: color-mix(in srgb, var(--santa-surface) 72%, transparent);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(180%);
+    }
+
+    .navbar {
+      --bs-navbar-color: var(--santa-muted);
+      --bs-navbar-hover-color: var(--santa-ink);
+      --bs-navbar-active-color: var(--santa-accent-text);
+    }
+
+    .navbar .nav-link {
+      border-radius: 999px;
+      padding-inline: .875rem !important;
+      font-weight: 500;
+      transition: background-color 150ms ease, color 150ms ease;
+    }
+
+    .navbar .nav-link.active {
+      background: var(--santa-accent-soft);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .navbar .nav-link:not(.active):hover {
+        background: var(--santa-surface-muted);
+      }
+    }
+
+    .navbar-brand {
+      color: var(--santa-ink);
+      letter-spacing: -.01em;
+    }
+
+    .brand-mark {
+      width: 2rem;
+      height: 2rem;
+      filter: drop-shadow(0 2px 6px rgba(255, 80, 80, .35));
+    }
+
+    .user-avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .page-heading {
+      max-width: 760px;
+    }
+
+    .eyebrow {
+      color: var(--santa-accent-text);
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .section-card,
+    .accordion-item {
+      border: 1px solid var(--santa-border);
+      border-radius: var(--santa-radius);
+      background: var(--santa-surface);
+      box-shadow: var(--santa-shadow);
+    }
+
+    .inset-panel {
+      border-radius: calc(var(--santa-radius) - .25rem);
+      background: var(--santa-surface-muted);
+    }
+
+    .status-strip {
+      --status-color: var(--santa-green);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .status-strip::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: .3rem;
+      background: var(--status-color);
+    }
+
+    .status-strip.is-danger {
+      --status-color: var(--santa-logo-red);
+    }
+
+    .status-strip.is-warning {
+      --status-color: #f79009;
+    }
+
+    .detail-list {
+      display: grid;
+      gap: .75rem;
+      margin: 0;
+    }
+
+    .detail-row {
+      display: grid;
+      grid-template-columns: minmax(8rem, 13rem) minmax(0, 1fr);
+      gap: 1rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--santa-border);
+    }
+
+    .detail-row:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .detail-row dt {
+      color: var(--santa-muted);
+      font-weight: 500;
+    }
+
+    .detail-row dd {
+      margin: 0;
+      min-width: 0;
+    }
+
+    .media-frame {
+      max-width: 680px;
+      margin-inline: auto;
+      border: 1px solid var(--santa-border);
+      border-radius: calc(var(--santa-radius) - .25rem);
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .media-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .code-block {
+      margin: .75rem 0 0;
+      padding: 1rem;
+      border-radius: .625rem;
+      background: #1c1514;
+      color: #f9fafb;
+      white-space: pre-wrap;
+    }
+
+    .btn {
+      --bs-btn-font-weight: 500;
+      --bs-btn-padding-x: 1.125rem;
+      border-radius: 999px;
+      transition: transform 160ms var(--santa-ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+    }
+
+    .btn:active {
+      transform: scale(.97);
+    }
+
+    .btn-primary,
+    .btn-danger {
+      --bs-btn-bg: var(--santa-accent);
+      --bs-btn-border-color: var(--santa-accent);
+      --bs-btn-hover-bg: var(--santa-accent-hover);
+      --bs-btn-hover-border-color: var(--santa-accent-hover);
+      --bs-btn-active-bg: var(--santa-accent-hover);
+      --bs-btn-active-border-color: var(--santa-accent-hover);
+      --bs-btn-disabled-bg: var(--santa-accent);
+      --bs-btn-disabled-border-color: var(--santa-accent);
+    }
+
+    .btn-success {
+      --bs-btn-bg: var(--santa-green);
+      --bs-btn-border-color: var(--santa-green);
+      --bs-btn-hover-bg: var(--santa-green-hover);
+      --bs-btn-hover-border-color: var(--santa-green-hover);
+      --bs-btn-active-bg: var(--santa-green-hover);
+      --bs-btn-active-border-color: var(--santa-green-hover);
+      --bs-btn-disabled-bg: var(--santa-green);
+      --bs-btn-disabled-border-color: var(--santa-green);
+    }
+
+    .btn-outline-danger {
+      --bs-btn-color: var(--santa-accent-text);
+      --bs-btn-border-color: currentColor;
+      --bs-btn-hover-bg: var(--santa-accent);
+      --bs-btn-hover-border-color: var(--santa-accent);
+      --bs-btn-active-bg: var(--santa-accent-hover);
+      --bs-btn-active-border-color: var(--santa-accent-hover);
+    }
+
+    .btn-outline-secondary {
+      --bs-btn-color: var(--santa-ink);
+      --bs-btn-border-color: var(--santa-border);
+      --bs-btn-bg: var(--santa-surface);
+      --bs-btn-hover-color: var(--santa-ink);
+      --bs-btn-hover-bg: var(--santa-surface-muted);
+      --bs-btn-hover-border-color: var(--santa-border);
+      --bs-btn-active-color: var(--santa-ink);
+      --bs-btn-active-bg: var(--santa-surface-muted);
+      --bs-btn-active-border-color: var(--santa-border);
+    }
+
+    .badge {
+      padding: .375em .75em;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+
+    .badge.text-bg-success { background: rgba(26, 127, 75, .12) !important; color: var(--santa-green) !important; }
+    .badge.text-bg-danger { background: var(--santa-accent-soft) !important; color: var(--santa-accent-text) !important; }
+    .badge.text-bg-warning { background: rgba(247, 144, 9, .14) !important; color: var(--santa-amber) !important; }
+    .badge.text-bg-secondary,
+    .badge.text-bg-light { background: var(--santa-surface-muted) !important; color: var(--santa-muted) !important; }
+
+    [data-bs-theme="dark"] .badge.text-bg-success { color: #4ade80 !important; }
+    [data-bs-theme="dark"] .badge.text-bg-warning { color: #fdb022 !important; }
+
+    .accordion {
+      --bs-accordion-bg: transparent;
+      --bs-accordion-border-width: 0;
+      --bs-accordion-active-bg: transparent;
+      --bs-accordion-active-color: var(--santa-ink);
+      --bs-accordion-btn-focus-box-shadow: 0 0 0 .25rem var(--bs-focus-ring-color);
+      display: grid;
+      gap: .75rem;
+    }
+
+    .accordion-button::after {
+      --bs-accordion-btn-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b6261' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M2 5L8 11L14 5'/%3e%3c/svg%3e");
+      --bs-accordion-btn-active-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b6261' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M2 5L8 11L14 5'/%3e%3c/svg%3e");
+    }
+
+    [data-bs-theme="dark"] .accordion-button::after {
+      --bs-accordion-btn-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23a89e9d' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M2 5L8 11L14 5'/%3e%3c/svg%3e");
+      --bs-accordion-btn-active-icon: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23a89e9d' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M2 5L8 11L14 5'/%3e%3c/svg%3e");
+    }
+
+    .accordion-item,
+    .accordion-item:first-of-type,
+    .accordion-item:last-of-type {
+      border-radius: var(--santa-radius);
+      overflow: hidden;
+    }
+
+    .accordion-button {
+      font-weight: 600;
+    }
+
+    .list-group {
+      --bs-list-group-bg: transparent;
+      --bs-list-group-border-color: var(--santa-border);
+    }
+
+    .alert {
+      border-radius: .75rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .btn:active {
+        transform: none;
+      }
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      .app-header {
+        background: var(--santa-surface);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .detail-row {
+        grid-template-columns: 1fr;
+        gap: .2rem;
+      }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% set current_user = session.get("user") %}
+  <header class="app-header">
+    <nav class="navbar navbar-expand-lg">
+      <div class="container app-container">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="/santa/moreinfo">
+          <img src="/santa/static/android-chrome-192x192.png" class="brand-mark" alt="">
+          <span>Santa</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#santaNavbar" aria-controls="santaNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="santaNavbar">
+          <div class="navbar-nav ms-lg-auto align-items-lg-center gap-lg-1">
+            {% block nav_links %}{% endblock %}
+            {% if response.support_phone %}
+            <a class="nav-link" href="tel:{{ response.support_phone }}">Call ServiceDesk</a>
+            {% endif %}
+            {% if current_user %}
+            <div class="d-flex align-items-center gap-2 ms-lg-3 pt-2 pt-lg-0">
+              {% if current_user.get("profile_pic") %}
+              <img src="data:image/png;base64,{{ current_user.get('profile_pic') }}" class="user-avatar" alt="">
+              {% endif %}
+              <span class="small text-secondary">{{ current_user.get("name", "User") }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container app-container py-4 py-lg-5">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

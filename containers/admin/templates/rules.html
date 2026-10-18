@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+
+{% block title %}Rules{% endblock %}
+
+{% set policy_labels = {
+    "ALLOWLIST": "Allow",
+    "ALLOWLIST_COMPILER": "Allow Compiler",
+    "BLOCKLIST": "Block",
+    "SILENT_BLOCKLIST": "Silent Block",
+    "SILENT_GUI_BLOCKLIST": "Silent Block (no GUI notification)",
+    "SILENT_TTY_BLOCKLIST": "Silent Block (no terminal message)",
+    "CEL": "CEL Expression",
+    "REMOVE": "Remove",
+} %}
+{% set rule_type_labels = {
+    "BINARY": "Binary",
+    "CERTIFICATE": "Certificate",
+    "TEAMID": "Team ID",
+    "SIGNINGID": "Signing ID",
+    "CDHASH": "CD Hash",
+} %}
+{% set scope_labels = {"global": "Global", "managedapp": "Managed App", "machine": "Machine"} %}
+
+{% macro rule_fields(prefix) %}
+    <div class="mb-3">
+        <label class="form-label">Identifier</label>
+        <input type="text" class="form-control" id="{{ prefix }}identifier" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Policy</label>
+        <select class="form-select policy-select" id="{{ prefix }}policy" data-prefix="{{ prefix }}">
+            {% for policy in options.POLICIES %}
+            <option value="{{ policy }}">{{ policy_labels.get(policy, policy) }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3 cel-field" id="{{ prefix }}cel_group" style="display: none;">
+        <label class="form-label">CEL Expression</label>
+        <textarea class="form-control font-monospace" id="{{ prefix }}cel_expr" rows="3"
+                  placeholder="target.signing_time >= timestamp('2025-01-01T00:00:00Z')"></textarea>
+        <div class="form-text">Must return true (allow), false (block) or a santa.cel.v1.ReturnValue.</div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Rule Type</label>
+        <select class="form-select" id="{{ prefix }}rule_type">
+            {% for rule_type in options.RULE_TYPES %}
+            <option value="{{ rule_type }}">{{ rule_type_labels.get(rule_type, rule_type) }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Scope</label>
+        <select class="form-select" id="{{ prefix }}scope">
+            {% for scope in options.SCOPES %}
+            <option value="{{ scope }}">{{ scope_labels.get(scope, scope) }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Custom Message</label>
+        <input type="text" class="form-control" id="{{ prefix }}custom_message">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Custom URL</label>
+        <input type="text" class="form-control" id="{{ prefix }}custom_url" placeholder="Overrides the event detail URL for this rule">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Event Detail Button Label</label>
+        <input type="text" class="form-control" id="{{ prefix }}event_detail_button_label">
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Notification App Name</label>
+        <input type="text" class="form-control" id="{{ prefix }}notification_app_name">
+        <div class="form-text">If set, Santa notifies the user that this app is now allowed.</div>
+    </div>
+{% endmacro %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        #loading {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="page-header">
+        <h1 class="page-title">Rules</h1>
+        <div class="page-actions">
+            <button type="button" class="btn btn-santa" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+                New Rule
+            </button>
+        </div>
+    </div>
+
+    <!-- Create New Rule Modal -->
+    <div class="modal fade" id="createRuleModal" tabindex="-1" aria-labelledby="createRuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="createRuleForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createRuleModalLabel">Create New Rule</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        {{ rule_fields("new_") }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-santa ">Create Rule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Search & Filters -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label for="identifierSearch" class="form-label">Search by Identifier</label>
+            <input type="text" id="identifierSearch" class="form-control" placeholder="Enter Identifier">
+        </div>
+
+        <div class="col-md-3">
+            <label for="ruleTypeFilter" class="form-label">Filter by RuleType</label>
+            <select id="ruleTypeFilter" class="form-select">
+                <option value="">All</option>
+                {% for rule_type in options.RULE_TYPES %}
+                <option value="{{ rule_type }}">{{ rule_type_labels.get(rule_type, rule_type) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="policyFilter" class="form-label">Filter by Policy</label>
+            <select id="policyFilter" class="form-select">
+                <option value="">All</option>
+                {% for policy in options.POLICIES %}
+                <option value="{{ policy }}">{{ policy_labels.get(policy, policy) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label for="scopeFilter" class="form-label">Filter by Scope</label>
+            <select id="scopeFilter" class="form-select">
+                <option value="">All</option>
+                {% for scope in options.SCOPES %}
+                <option value="{{ scope }}">{{ scope_labels.get(scope, scope) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Identifier</th>
+                    <th>Custom Message</th>
+                    <th>Rule Type</th>
+                    <th>Policy</th>
+                    <th>Scope</th>
+                    <th>Assigned</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="rulesTableBody">
+                <!-- Rules will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="loading">Loading more rules...</div>
+
+    <!-- Edit Rule -->
+    <div class="modal fade" id="editRuleModal" tabindex="-1" aria-labelledby="editRuleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editRuleForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editRuleModalLabel">Edit Rule</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="ruleId">
+                        {{ rule_fields("edit_") }}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger me-auto" id="deleteRuleBtn">Delete Rule</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-santa ">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block content_scripts %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let nextCursor = null;
+        let loading = false;
+        let identifierQuery = "";
+        let selectedRuleType = "";
+        let selectedPolicy = "";
+        let selectedScope = "";
+
+        function loadRules(reset = false) {
+            if (reset) {
+                $("#rulesTableBody").empty();
+                nextCursor = null;
+            }
+
+            if (loading || nextCursor === false) return;
+            loading = true;
+            $("#loading").show();
+
+            $.get("/admin/load_rules", {
+                cursor: nextCursor,
+                identifier: identifierQuery,
+                rule_type: selectedRuleType,
+                policy: selectedPolicy,
+                scope: selectedScope
+            }, function(response) {
+                if (response.data.length > 0) {
+                    response.data.forEach(rule => {
+                        let row = `
+                            <tr>
+                                <td>${escapeHtml(rule.identifier)}</td>
+                                <td>${escapeHtml(rule.custom_msg)}</td>
+                                <td>${escapeHtml(rule.rule_type)}</td>
+                                <td>${escapeHtml(rule.policy)}</td>
+                                <td>${escapeHtml(rule.scope)}</td>
+                                <td>${rule.assigned ? rule.assigned.length : 0}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-santa  edit-rule-btn" data-bs-toggle="modal" data-bs-target="#editRuleModal" data-id="${escapeHtml(rule.id)}">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        $("#rulesTableBody").append(row);
+                    });
+
+                    nextCursor = response.next_cursor;
+                } else {
+                    nextCursor = false;
+                }
+
+                $("#loading").hide();
+                loading = false;
+            });
+        }
+
+        function toggleCelField(prefix) {
+            $(`#${prefix}cel_group`).toggle($(`#${prefix}policy`).val() === "CEL");
+        }
+
+        function readRuleForm(prefix) {
+            return {
+                identifier: $(`#${prefix}identifier`).val(),
+                action: $(`#${prefix}policy`).val(),
+                evaluation: $(`#${prefix}rule_type`).val(),
+                scope: $(`#${prefix}scope`).val(),
+                custom_message: $(`#${prefix}custom_message`).val(),
+                custom_url: $(`#${prefix}custom_url`).val(),
+                event_detail_button_label: $(`#${prefix}event_detail_button_label`).val(),
+                notification_app_name: $(`#${prefix}notification_app_name`).val(),
+                cel_expr: $(`#${prefix}cel_expr`).val()
+            };
+        }
+
+        function saveRule(prefix, modalId) {
+            $.ajax({
+                url: "/admin/save_rule",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(readRuleForm(prefix)),
+                success: function(response) {
+                    alert(response.message);
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById(modalId)).hide();
+                    location.reload();
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText;
+                    alert("Failed to save rule: " + message);
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            loadRules();  // Load first batch
+
+            $(window).scroll(function() {
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                    loadRules();
+                }
+            });
+
+            $("#identifierSearch").on("input", function() {
+                identifierQuery = $(this).val().trim();
+                loadRules(true);
+            });
+
+            $("#ruleTypeFilter, #policyFilter, #scopeFilter").change(function() {
+                selectedRuleType = $("#ruleTypeFilter").val();
+                selectedPolicy = $("#policyFilter").val();
+                selectedScope = $("#scopeFilter").val();
+                loadRules(true);
+            });
+
+            $(".policy-select").change(function() {
+                toggleCelField($(this).data("prefix"));
+            });
+
+            $("#rulesTableBody").on("click", ".edit-rule-btn", function(){
+                let ruleId = $(this).data("id");
+
+                $.getJSON(`/admin/rules/${encodeURIComponent(ruleId)}`, function(data) {
+                    $("#ruleId").val(data._id);
+                    $("#edit_identifier").val(data.identifier || "").prop("readonly", true);
+                    $("#edit_policy").val(data.policy || "ALLOWLIST");
+                    $("#edit_rule_type").val(data.rule_type || "BINARY");
+                    $("#edit_scope").val(data.scope || "global");
+                    $("#edit_custom_message").val(data.custom_msg || "");
+                    $("#edit_custom_url").val(data.custom_url || "");
+                    $("#edit_event_detail_button_label").val(data.event_detail_button_label || "");
+                    $("#edit_notification_app_name").val(data.notification_app_name || "");
+                    $("#edit_cel_expr").val(data.cel_expr || "");
+                    toggleCelField("edit_");
+                });
+            });
+
+            $("#editRuleForm").submit(function(event){
+                event.preventDefault();
+                saveRule("edit_", "editRuleModal");
+            });
+
+            $("#createRuleForm").submit(function(event){
+                event.preventDefault();
+                saveRule("new_", "createRuleModal");
+            });
+
+            $("#deleteRuleBtn").click(function() {
+                const ruleId = $("#ruleId").val();
+                if (!ruleId || !confirm("Delete this rule? Devices that have it will remove it on their next sync.")) return;
+
+                $.ajax({
+                    url: `/admin/rules/${encodeURIComponent(ruleId)}/delete`,
+                    type: "POST",
+                    success: function(response) {
+                        alert(response.message);
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        const message = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText;
+                        alert("Failed to delete rule: " + message);
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

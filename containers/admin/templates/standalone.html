@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Standalone{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Standalone Approvals</h1>
+        <p class="page-subtitle">
+        Rules users created themselves on devices in STANDALONE mode, newest first.
+        Request a CLEAN_STANDALONE sync on a device to remove them.
+    </p>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="machineFilter" class="form-label">Machine ID</label>
+            <input type="text" id="machineFilter" class="form-control" placeholder="Exact machine ID">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Approved</th>
+                    <th>Device</th>
+                    <th>Rule</th>
+                    <th>Identifier</th>
+                </tr>
+            </thead>
+            <tbody id="approvalsTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="text-center mb-4">
+        <button type="button" class="btn btn-outline-secondary" id="loadMoreBtn" style="display: none;">Load more</button>
+    </div>
+{% endblock %}
+
+{% block content_scripts %}
+    <script>
+        let nextCursor = null;
+
+        async function loadApprovals(reset) {
+            if (reset) {
+                nextCursor = null;
+                document.getElementById("approvalsTableBody").innerHTML = "";
+            }
+
+            const params = new URLSearchParams({
+                cursor: nextCursor || "",
+                machine_id: document.getElementById("machineFilter").value.trim(),
+            });
+            const response = await fetch(`/admin/load_standalone?${params}`);
+            const result = await response.json();
+
+            const body = document.getElementById("approvalsTableBody");
+            result.data.forEach(approval => {
+                body.insertAdjacentHTML("beforeend", `
+                    <tr>
+                        <td>${escapeHtml(approval.timestamp || approval.creation_time)}</td>
+                        <td>${escapeHtml(approval.hostname || approval.machine_id)}</td>
+                        <td>${escapeHtml(approval.decision)}</td>
+                        <td class="font-monospace">${escapeHtml(approval.identifier)}</td>
+                    </tr>
+                `);
+            });
+
+            nextCursor = result.next_cursor;
+            document.getElementById("loadMoreBtn").style.display = nextCursor ? "" : "none";
+        }
+
+        document.getElementById("loadMoreBtn").addEventListener("click", () => loadApprovals(false));
+        document.getElementById("machineFilter").addEventListener("keypress", event => {
+            if (event.key === "Enter") loadApprovals(true);
+        });
+
+        loadApprovals(true);
+    </script>
+{% endblock %}

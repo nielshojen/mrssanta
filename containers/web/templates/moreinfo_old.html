@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Santa</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://storage.googleapis.com/mrssanta-static/apple-touch-icon.png" type="image/x-icon">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://storage.googleapis.com/mrssanta-static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://storage.googleapis.com/mrssanta-static/favicon-16x16.png">
+  <link rel="shortcut icon" href="https://storage.googleapis.com/mrssanta-static/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="https://storage.googleapis.com/mrssanta-static/favicon.ico" type="image/x-icon">
+  <link rel="manifest" href="https://storage.googleapis.com/mrssanta-static/site.webmanifest">
+  <style>
+    body {
+      background-color: #635d51;
+    }
+
+    .btn-secondary,
+    .btn-secondary:hover,
+    .btn-secondary:focus {
+      color: #333;
+    }
+
+    .cover-container {
+      max-width: 62em;
+    }
+
+    .nav-masthead .nav-link {
+      padding: .25rem 0;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .5);
+      background-color: transparent;
+      border-bottom: .25rem solid transparent;
+    }
+
+    .nav-masthead .nav-link:hover,
+    .nav-masthead .nav-link:focus {
+      border-bottom-color: rgba(255, 255, 255, .25);
+    }
+
+    .nav-masthead .nav-link + .nav-link {
+      margin-left: 1rem;
+    }
+
+    .nav-masthead .active {
+      color: #fff;
+      border-bottom-color: #fff;
+    }
+
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+</head>
+<body class="d-flex h-100 text-white">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+  <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <header class="mb-2">
+      <div>
+        <h3 class="float-md-start mb-0">Santa</h3>
+        <nav class="nav nav-masthead justify-content-center float-md-end">
+          {% if response.back_url %}
+          <a class="nav-link" href="{{ response.back_url }}">← Back</a>
+          {% endif %}
+          <a class="nav-link active" aria-current="page" href="#">More Info</a>
+          {% if response.support_phone %}
+          <a class="nav-link" href="tel:{{ response.support_phone }}">Call ServiceDesk</a>
+          {% endif %}
+
+          <!-- Right-aligned: user info -->
+          <ul class="navbar-nav ms-auto d-flex flex-row align-items-center">
+            {% if session["user"] %}
+              {% if session["user"]["profile_pic"] %}
+              <li class="nav-item ms-3">
+                <img src="data:image/png;base64,{{ session['user']['profile_pic'] }}" class="rounded" width="40" height="40" alt="User Profile">
+              </li>
+              {% endif %}
+              <li class="nav-item ms-2">
+                <span class="navbar-text text-white">{{ session["user"]["name"] }}</span>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <div class="row">
+
+      <div class="col-lg-12">
+
+        <div class="card border-dark shadow-sm mb-4">
+          <div class="card-header text-bg-success py-3">
+            <h6 class="mb-0 fw-bold">What is the Santa app?</h6>
+          </div>
+
+          <div class="card-body">
+            <p class="card-text">
+              The app is named <strong>Santa</strong> because it keeps track of apps that are <strong>naughty</strong> or <strong>nice</strong>.
+            </p>
+
+            <hr class="my-4">
+
+            <p class="card-text">
+              We run <strong>Santa</strong> to make sure we only run software we know we can trust, so we can keep <strong>your</strong> and <strong>{{ response.organization }}</strong>'s data safe.
+            </p>
+
+            <hr class="my-4">
+
+            <p class="card-text">
+              <strong>Apps</strong> we already know are allowed <strong>automatically</strong>.
+            </p>
+
+            <p class="card-text">
+              <strong>Apps</strong> we don't know (and that are not deemed <strong>malicious</strong>) you can <strong>allow</strong> yourself:
+            </p>
+
+            <div class="text-center mt-5 mb-3">
+              <img
+                src="https://storage.googleapis.com/mrssanta-static/popup.png"
+                alt="Santa allow prompt"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 640px;"
+              >
+            </div>
+
+            <p class="card-text text-center">Click <strong>Allow</strong> to approve the app.</p>
+
+            <div class="text-center mt-5 mb-3">
+              <img
+                src="https://storage.googleapis.com/mrssanta-static/results.png"
+                alt="Santa scan results"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 640px;"
+              >
+            </div>
+
+            <p class="card-text text-center">
+              If the security scan passes and the app is considered <strong>Safe</strong>:
+            </p>
+
+            <div class="text-center mt-5 mb-3">
+              <img
+                src="https://storage.googleapis.com/mrssanta-static/allow.png"
+                alt="Santa allow button"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 640px;"
+              >
+            </div>
+
+            <p class="card-text text-center">
+              You can then <strong>Allow</strong> the app to run on your own Mac. Macs sync rules about once every {{ response.sync_interval }} minute(s).
+            </p>
+
+            <p class="card-text text-center">
+              If you want to speed up this process, click the <strong>Santa</strong> icon in the menubar and click <strong>Sync</strong>.
+            </p>
+
+            <div class="text-center mt-5 mb-3">
+              <img
+                src="https://storage.googleapis.com/mrssanta-static/sync.png"
+                alt="Santa sync menu"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 640px;"
+              >
+            </div>
+
+            <p class="card-text text-center">
+              If you did not intend to run this app, please <strong>Report as Malware</strong>.
+            </p>
+
+            <div class="text-center mt-5 mb-3">
+              <img
+                src="https://storage.googleapis.com/mrssanta-static/notallowed.png"
+                alt="Santa blocked managed app message"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 640px;"
+              >
+            </div>
+
+            <p class="card-text text-center">
+              If it's a <strong>Managed</strong> app (either one that requires approval or has a license cost), then the app is blocked until it's installed by the <strong>{{ response.selfserviceapp }}</strong> app.
+            </p>
+
+            <hr class="my-4">
+
+            <p class="card-text">
+              If an app is approved on <strong>{{ response.vote_threshold }}</strong> unique Macs, then the rule will be converted to a global rule and the app will be allowed to run on all Macs.
+            </p>
+
+            <hr class="my-4">
+
+            <p class="card-text">
+              <strong>Apps</strong> that are not <strong>approved</strong> or are deemed <strong>malicious</strong> will be <strong>blocked</strong> from running:
+            </p>
+
+            <div class="text-center my-3">
+              <img
+                src="https://storage.googleapis.com/mrssanta-static/santa-block.gif"
+                alt="Santa blocked app message"
+                class="img-fluid rounded shadow-sm"
+                style="max-width: 640px;"
+              >
+            </div>
+
+            <hr class="my-4">
+
+            <p class="card-text mb-1">If you have any problems or questions, please contact:</p>
+            {% if response.organization %}
+            <p class="card-text fw-bold mb-2">Service Desk for {{ response.organization }}</p>
+            {% else %}
+            <p class="card-text fw-bold mb-2">Service Desk</p>
+            {% endif %}
+
+              {% if response.support_phone %}
+              <p class="card-text mb-1">
+                <a
+                  href="tel:{{ response.support_phone }}"
+                  class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+                >
+                  {{ response.support_phone }}
+                </a>
+              </p>
+              {% endif %}
+
+              {% if response.support_email %}
+              <p class="card-text mb-0">
+                <a
+                  href="mailto:{{ response.support_email }}"
+                  class="link-dark link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover"
+                >
+                  {{ response.support_email }}
+                </a>
+              </p>
+              {% endif %}
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

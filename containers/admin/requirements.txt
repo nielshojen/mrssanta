@@ -1,0 +1,8 @@
+Flask
+flask-session
+Flask-WTF
+msal
+requests
+pymongo
+dnspython
+gunicorn

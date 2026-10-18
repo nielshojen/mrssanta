@@ -5,5 +5,16 @@ mysql/
 *.tfstate*
 .terraform*
 *.auto.tfvars
-*.json
+sa.json
 *openapi.yaml
+env
+
+# Agents
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+
+# Local docker compose settings and secrets
+*compose.override.y*ml

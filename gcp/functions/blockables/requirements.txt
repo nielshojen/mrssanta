@@ -1,4 +1,0 @@
-functions-framework
-Flask
-requests
-pymongo

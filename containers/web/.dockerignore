@@ -1,0 +1,32 @@
+# Ignore virtual environments
+venv/
+.env
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local development files
+.DS_Store
+*.log
+
+# Ignore Git files
+.git
+.gitignore
+
+flask_session
+
+# Local settings and secrets
+env
+
+# Tests are not needed in the image
+tests/
+pytest.ini
+requirements-dev.txt
+
+# Tests are not needed in the image
+tests/
+pytest.ini
+requirements-dev.txt

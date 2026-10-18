@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}File Access{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1 class="page-title">File Access</h1>
+        <p class="page-subtitle">
+        File Access Authorization violations reported by devices, newest first.
+    </p>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="ruleNameFilter" class="form-label">Rule name</label>
+            <input type="text" id="ruleNameFilter" class="form-control" placeholder="Exact rule name">
+        </div>
+        <div class="col-md-4">
+            <label for="machineFilter" class="form-label">Machine ID</label>
+            <input type="text" id="machineFilter" class="form-control" placeholder="Exact machine ID">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Device</th>
+                    <th>Rule</th>
+                    <th>Target</th>
+                    <th>Decision</th>
+                    <th>Process</th>
+                </tr>
+            </thead>
+            <tbody id="faaTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="text-center mb-4">
+        <button type="button" class="btn btn-outline-secondary" id="loadMoreBtn" style="display: none;">Load more</button>
+    </div>
+{% endblock %}
+
+{% block content_scripts %}
+    <script>
+        let nextCursor = null;
+
+        function formatTime(seconds) {
+            return seconds ? new Date(seconds * 1000).toLocaleString() : "";
+        }
+
+        function processChain(chain) {
+            if (!chain || chain.length === 0) return "";
+            return chain.map(p => `${escapeHtml(p.file_path)}${p.pid ? ` <span class="text-body-secondary">(${escapeHtml(p.pid)})</span>` : ""}`)
+                .join("<br>&#8627; ");
+        }
+
+        async function loadEvents(reset) {
+            if (reset) {
+                nextCursor = null;
+                document.getElementById("faaTableBody").innerHTML = "";
+            }
+
+            const params = new URLSearchParams({
+                cursor: nextCursor || "",
+                rule_name: document.getElementById("ruleNameFilter").value.trim(),
+                machine_id: document.getElementById("machineFilter").value.trim(),
+            });
+            const response = await fetch(`/admin/load_file_access?${params}`);
+            const result = await response.json();
+
+            const body = document.getElementById("faaTableBody");
+            result.data.forEach(event => {
+                body.insertAdjacentHTML("beforeend", `
+                    <tr>
+                        <td>${escapeHtml(formatTime(event.access_time))}</td>
+                        <td>${escapeHtml(event.hostname || event.machine_id)}</td>
+                        <td>${escapeHtml(event.rule_name)}${event.rule_version ? ` <span class="text-body-secondary">${escapeHtml(event.rule_version)}</span>` : ""}</td>
+                        <td class="font-monospace">${escapeHtml(event.target)}</td>
+                        <td>${escapeHtml((event.decision || "").replace("FILE_ACCESS_DECISION_", ""))}</td>
+                        <td class="font-monospace small">${processChain(event.process_chain)}</td>
+                    </tr>
+                `);
+            });
+
+            nextCursor = result.next_cursor;
+            document.getElementById("loadMoreBtn").style.display = nextCursor ? "" : "none";
+        }
+
+        document.getElementById("loadMoreBtn").addEventListener("click", () => loadEvents(false));
+        ["ruleNameFilter", "machineFilter"].forEach(id => {
+            document.getElementById(id).addEventListener("keypress", event => {
+                if (event.key === "Enter") loadEvents(true);
+            });
+        });
+
+        loadEvents(true);
+    </script>
+{% endblock %}

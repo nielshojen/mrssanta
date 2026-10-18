@@ -1,0 +1,105 @@
+# Local development stack. Settings and secrets go in docker-compose.override.yml,
+# which Compose loads automatically: cp docker-compose.override.yml.example docker-compose.override.yml
+
+name: mrssanta
+
+x-mongo: &mongo
+  MONGO_URI: mongodb://mongo:27017
+  MONGO_DB: mrssanta
+
+x-depends-on-mongo: &depends-on-mongo
+  depends_on:
+    mongo:
+      condition: service_healthy
+
+services:
+  # Path routing mirrors the GKE ingress in deploy/gke/ingress.tf
+  proxy:
+    image: caddy:2.10
+    ports:
+      - "8080:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+      - preflight
+      - eventupload
+      - ruledownload
+      - postflight
+      - xsrf
+      - metrics
+      - admin
+      - web
+
+  mongo:
+    image: mongo:8.2
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Database viewer/editor at http://localhost:8081
+  mongo-express:
+    image: mongo-express:1.0.2
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_BASICAUTH: "true"
+    <<: *depends-on-mongo
+
+  api:
+    build: ../../containers/api
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  preflight:
+    build: ../../containers/preflight
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  eventupload:
+    build: ../../containers/eventupload
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  ruledownload:
+    build: ../../containers/ruledownload
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  postflight:
+    build: ../../containers/postflight
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  xsrf:
+    build: ../../containers/xsrf
+
+  metrics:
+    build: ../../containers/metrics
+
+  # Background jobs, e.g. the MalwareBazaar check, each turned on from the
+  # admin settings
+  worker:
+    build: ../../containers/worker
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  admin:
+    build: ../../containers/admin
+    environment: *mongo
+    <<: *depends-on-mongo
+
+  web:
+    build: ../../containers/web
+    environment: *mongo
+    <<: *depends-on-mongo
+
+volumes:
+  mongo-data:

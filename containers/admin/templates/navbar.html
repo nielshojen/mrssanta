@@ -1,0 +1,62 @@
+{% macro nav_link(href, label) %}
+  {% set active = request.path == href or (href != "/admin/" and request.path.startswith(href)) %}
+  <li class="nav-item">
+    <a class="nav-link d-flex align-items-center gap-2{% if active %} active{% endif %}" href="{{ href }}"{% if active %} aria-current="page"{% endif %}>
+      {{ label }}
+      {{ caller() if caller }}
+    </a>
+  </li>
+{% endmacro %}
+
+<header class="app-header">
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/admin/">
+        <img src="{{ url_for('static', filename='images/android-chrome-192x192.png') }}" class="brand-mark" alt="">
+        <span>Mrs Santa</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto gap-lg-1">
+          {{ nav_link("/admin/", "Home") }}
+          {{ nav_link("/admin/devices", "Devices") }}
+          {{ nav_link("/admin/rules", "Rules") }}
+          {% call nav_link("/admin/review", "Review") %}
+            {% if review_count > 0 %}
+            <span class="badge rounded-pill nav-count">{{ review_count }}</span>
+            {% endif %}
+          {% endcall %}
+          {{ nav_link("/admin/events", "Events") }}
+          {{ nav_link("/admin/file_access", "File Access") }}
+          {{ nav_link("/admin/standalone", "Standalone") }}
+          {{ nav_link("/admin/settings", "Settings") }}
+        </ul>
+
+        <div class="d-flex align-items-center gap-3 py-2 py-lg-0">
+          <div class="dropdown">
+            <button id="themeToggle" type="button" class="theme-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Appearance">
+              <span id="themeIcon" class="bi bi-circle-half"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end theme-menu">
+              <li><button type="button" class="dropdown-item" data-theme-choice="system"><span class="bi bi-circle-half"></span>System</button></li>
+              <li><button type="button" class="dropdown-item" data-theme-choice="light"><span class="bi bi-sun"></span>Light</button></li>
+              <li><button type="button" class="dropdown-item" data-theme-choice="dark"><span class="bi bi-moon"></span>Dark</button></li>
+            </ul>
+          </div>
+
+          {% if session["user"] %}
+          <div class="d-flex align-items-center gap-2">
+            {% if session["user"]["profile_pic"] %}
+            <img src="data:image/png;base64,{{ session['user']['profile_pic'] }}" class="user-avatar" alt="">
+            {% endif %}
+            <span class="small text-body-secondary">{{ session["user"]["name"] }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
